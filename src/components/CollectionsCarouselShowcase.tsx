@@ -80,9 +80,36 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
     });
   }, [products, activeCategory]);
 
+  // Symmetrical Circular Runway Buffer
+  const repeatCount = useMemo(() => {
+    if (displayedProducts.length === 0) return 1;
+    if (displayedProducts.length < 5) return 9;
+    return 5;
+  }, [displayedProducts.length]);
+
+  const repeatedProducts = useMemo(() => {
+    if (displayedProducts.length === 0) return [];
+    const list: JewelryItem[] = [];
+    for (let r = 0; r < repeatCount; r++) {
+      list.push(...displayedProducts);
+    }
+    return list;
+  }, [displayedProducts, repeatCount]);
+
+  // Center on iconic signature piece (Ethereal Pearl Drops) or middle item so runway is perfectly symmetrical
   useEffect(() => {
-    setCurrentIndex(0);
-  }, [activeCategory]);
+    if (displayedProducts.length === 0) return;
+
+    let targetLocalIndex = displayedProducts.findIndex(
+      p => p.name.toLowerCase().includes('ethereal pearl drops') || p.id === '1'
+    );
+    if (targetLocalIndex === -1) {
+      targetLocalIndex = Math.floor(displayedProducts.length / 2);
+    }
+
+    const middleCycleStart = Math.floor(repeatCount / 2) * displayedProducts.length;
+    setCurrentIndex(middleCycleStart + targetLocalIndex);
+  }, [activeCategory, displayedProducts, repeatCount]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -95,16 +122,32 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [displayedProducts.length]);
+  }, [displayedProducts.length, repeatedProducts.length]);
 
   const goToNext = () => {
     if (displayedProducts.length === 0) return;
-    setCurrentIndex(prev => (prev + 1) % displayedProducts.length);
+    setCurrentIndex(prev => {
+      const next = prev + 1;
+      const base = displayedProducts.length;
+      const middleCycleStart = Math.floor(repeatCount / 2) * base;
+      if (next >= repeatedProducts.length - 3) {
+        return middleCycleStart + (next % base);
+      }
+      return next;
+    });
   };
 
   const goToPrev = () => {
     if (displayedProducts.length === 0) return;
-    setCurrentIndex(prev => (prev - 1 + displayedProducts.length) % displayedProducts.length);
+    setCurrentIndex(prev => {
+      const prevIdx = prev - 1;
+      const base = displayedProducts.length;
+      const middleCycleStart = Math.floor(repeatCount / 2) * base;
+      if (prevIdx < 3) {
+        return middleCycleStart + (((prevIdx % base) + base) % base);
+      }
+      return prevIdx;
+    });
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -154,7 +197,7 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
     return 22;
   }, [viewportWidth]);
 
-  const currentProduct = displayedProducts[currentIndex] || displayedProducts[0];
+  const currentProduct = repeatedProducts[currentIndex] || displayedProducts[0];
   const activeOrHoveredProduct = displayedProducts.find(p => p.id === hoveredId) || currentProduct;
 
   return (
@@ -236,11 +279,25 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
                 transform: `translateX(calc(50vw - ${(currentIndex * (cardWidth + cardGap)) + (cardWidth / 2)}px))`
               }}
             >
-              {displayedProducts.map((item, index) => {
+              {repeatedProducts.map((item, index) => {
                 const isHovered = hoveredId === item.id;
                 const isAnyHovered = hoveredId !== null;
                 const isCurrent = currentIndex === index;
                 const offset = index - currentIndex;
+
+                // Optimization: distant cards outside visible window are kept as layout spacers
+                if (Math.abs(offset) > 4) {
+                  return (
+                    <div 
+                      key={`spacer-${item.id}-${index}`} 
+                      style={{
+                        width: `${cardWidth}px`,
+                        marginRight: `${cardGap}px`
+                      }} 
+                      className="flex-shrink-0 invisible pointer-events-none" 
+                    />
+                  );
+                }
 
                 // 5-Card Stage Runway Styling & Hover Highlight
                 let borderClass = 'border border-white/20';
@@ -285,7 +342,7 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
 
                 return (
                   <motion.div
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     layout
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                     onClick={() => {
