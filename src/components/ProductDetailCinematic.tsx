@@ -160,7 +160,7 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
         {/* Center: Brand Crest & Wordmark */}
         <div className="flex flex-col items-center justify-center cursor-pointer text-center" onClick={onBack}>
           <span className="font-serif text-2xl tracking-[0.25em] -mr-[0.25em] inline-block text-[#1A1A1A] font-light">ANOVI</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] -mr-[0.4em] inline-block text-onyx/40 -mt-0.5">Haute Joaillerie · 1924</span>
+          <span className="text-[9px] uppercase tracking-[0.35em] -mr-[0.35em] inline-block text-onyx/75 font-medium -mt-0.5">Haute Joaillerie · 1924</span>
         </div>
 
         {/* Right: Actions (Wishlist & Cart) */}
@@ -236,9 +236,11 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                 />
               )}
 
-              {/* Angle Label & Zoom indicator */}
-              <div className="absolute top-24 left-8 text-[9px] uppercase tracking-[0.3em] text-onyx/40 font-mono">
-                {mediaList[activeMediaIndex].label}
+              {/* Studio Perspective Tag */}
+              <div className="absolute top-20 md:top-24 left-6 md:left-8 z-20 flex items-center gap-1.5">
+                <span className="text-[10px] md:text-[11px] uppercase tracking-[0.25em] font-mono font-medium text-onyx/90 bg-white/60 backdrop-blur-md px-3 py-1 rounded-full border border-black/5 shadow-xs">
+                  {mediaList[activeMediaIndex].label}
+                </span>
               </div>
 
               {/* Interactive Hotspot Pin on the piece: "MATERIALS +" */}
@@ -303,8 +305,11 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                       }}
                     />
                     
-                    <div className="absolute top-24 left-8 text-[9px] uppercase tracking-[0.3em] text-onyx/40 font-mono">
-                      {nextMedia.label}
+                    {/* Studio Perspective Tag */}
+                    <div className="absolute top-20 md:top-24 left-6 md:left-8 z-20 flex items-center gap-1.5">
+                      <span className="text-[10px] md:text-[11px] uppercase tracking-[0.25em] font-mono font-medium text-onyx/90 bg-white/60 backdrop-blur-md px-3 py-1 rounded-full border border-black/5 shadow-xs">
+                        {nextMedia.label}
+                      </span>
                     </div>
 
                     {/* Interactive Hotspot 2: "DETAILS +" */}
@@ -388,7 +393,7 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                     <p className="text-sm font-mono text-gold font-medium">
                       {formatPrice(product.price)}
                     </p>
-                    <p className="text-[11px] text-white/50 truncate font-light">
+                    <p className="text-[11px] text-white/80 truncate font-light">
                       {product.collection} · {product.category}
                     </p>
                   </div>
@@ -517,7 +522,7 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                 <div className="flex items-center justify-between mb-8 pb-6 border-b border-onyx/10">
                   <div>
                     <span className="text-2xl font-serif font-medium text-gold">{formatPrice(product.price)}</span>
-                    <span className="text-[10px] text-onyx/40 uppercase tracking-widest block">Insured White-Glove Shipping Included</span>
+                    <span className="text-[10px] text-onyx/70 uppercase tracking-widest block font-medium">Insured White-Glove Shipping Included</span>
                   </div>
                   <button
                     onClick={handleAddToCart}
