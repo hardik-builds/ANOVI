@@ -84,6 +84,22 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
   const [newComment, setNewComment] = useState('');
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (diff > 40) {
+      handleNextMedia();
+    } else if (diff < -40) {
+      handlePrevMedia();
+    }
+    touchStartX.current = null;
+  };
 
   const handleNextMedia = () => {
     setActiveMediaIndex((prev) => (prev + 1) % mediaList.length);
@@ -195,6 +211,8 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
         {/* Side-by-side Panoramic Image Columns (desktop) / Swipeable carousel */}
         <div 
           ref={scrollContainerRef}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="w-full h-full flex flex-col lg:flex-row items-center justify-center relative bg-gradient-to-b from-[#ECE9E2] via-[#E8E4DD] to-[#E3DFD7]"
         >
           {/* Main Visual Display (Split View: Current Angle + Adjacent Perspective) */}

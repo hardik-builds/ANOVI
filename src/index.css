@@ -12,9 +12,20 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     @apply bg-ivory text-onyx font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  img, video {
+    -webkit-user-drag: none;
   }
   
   h1, h2, h3, h4 {
