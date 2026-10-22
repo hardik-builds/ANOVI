@@ -60,18 +60,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
-  const processOrderCompletion = (method: Order['paymentMethod'], paymentId?: string) => {
-    const orderItems: OrderItem[] = cartItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      image: item.image,
-      collection: item.collection,
-    }));
+  const processOrderCompletion = async (method: Order['paymentMethod'], paymentId?: string, verifiedOrder?: Order) => {
+    setIsSubmitting(true);
 
-    // Security requirement: Never mark orders as Paid solely from frontend reports or unintegrated methods
-    const newOrder = storeService.addOrder({
+    if (verifiedOrder) {
+      setIsSubmitting(false);
+      setConfirmedOrder(verifiedOrder);
+      onOrderSuccess(verifiedOrder);
+      return;
+    }
+
+    const orderPayload = {
       customerName: formData.name || 'Private Patron',
       customerEmail: formData.email || 'client@atelier.anovi.com',
       customerPhone: formData.phone || '+44 20 7946 0912',
@@ -79,21 +78,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       city: formData.city || 'London',
       country: formData.country || 'United Kingdom',
       postalCode: formData.postalCode || 'SW1A 1AA',
-      items: orderItems,
-      subtotal: subtotalNumber,
+      items: cartItems.map(item => ({ id: item.id, quantity: item.quantity })),
       currency: currency,
-      status: 'Preparing Atelier',
-      trackingNumber: 'PENDING_ATELIER_DISPATCH',
       paymentMethod: method,
-      paymentStatus: 'Pending Verification',
       notes: paymentId 
-        ? `Transaction ID: ${paymentId} (Pending server verification) | ${formData.specialNotes || 'Client acquisition request'}`
+        ? `Payment Transaction ID: ${paymentId} (Pending server verification) | ${formData.specialNotes || ''}`
         : formData.specialNotes || 'Acquisition order placed pending concierge verification and insured dispatch schedule.'
-    });
+    };
 
+    const res = await storeService.createOrderOnServer(orderPayload);
     setIsSubmitting(false);
-    setConfirmedOrder(newOrder);
-    onOrderSuccess(newOrder);
+
+    if (res.success && res.order) {
+      setConfirmedOrder(res.order);
+      onOrderSuccess(res.order);
+    } else {
+      setErrorMessage(res.error || 'Failed to register acquisition order. Please try again or contact the concierge.');
+    }
   };
 
   const handleRazorpayCheckout = async () => {
@@ -110,14 +111,38 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const amountInSubunits = Math.round((subtotalNumber || 1000) * 100);
+    // 1. Create order on server first to recalculate trusted pricing
+    const serverOrderRes = await storeService.createOrderOnServer({
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      shippingAddress: formData.address,
+      city: formData.city,
+      country: formData.country,
+      postalCode: formData.postalCode,
+      items: cartItems.map(item => ({ id: item.id, quantity: item.quantity })),
+      currency: currency,
+      paymentMethod: 'Razorpay',
+      notes: formData.specialNotes
+    });
 
+    if (!serverOrderRes.success || !serverOrderRes.order) {
+      setIsSubmitting(false);
+      setErrorMessage(serverOrderRes.error || 'Unable to initialize order with atelier server.');
+      return;
+    }
+
+    const pendingOrder = serverOrderRes.order;
+    const amountInSubunits = Math.round((pendingOrder.subtotal || subtotalNumber || 1000) * 100);
+
+    // 2. Open Razorpay Checkout modal
     const result = await initializeRazorpayPayment({
       key: razorpayKey,
       amount: amountInSubunits,
       currency: currency === 'INR' ? 'INR' : 'USD',
       name: 'ANOVI Haute Joaillerie',
       description: 'Atelier High Jewelry Commission',
+      order_id: serverOrderRes.razorpayOrderId || undefined,
       image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=200',
       prefill: {
         name: formData.name,
@@ -132,7 +157,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     if (result.success && result.response) {
       setRazorpayPaymentId(result.response.razorpay_payment_id);
-      processOrderCompletion('Razorpay', result.response.razorpay_payment_id);
+
+      // 3. Perform server-side cryptographic signature verification
+      if (result.response.razorpay_signature && result.response.razorpay_order_id) {
+        const verifyRes = await storeService.verifyPaymentOnServer({
+          orderId: pendingOrder.id,
+          razorpay_order_id: result.response.razorpay_order_id,
+          razorpay_payment_id: result.response.razorpay_payment_id,
+          razorpay_signature: result.response.razorpay_signature
+        });
+
+        if (verifyRes.success && verifyRes.order) {
+          processOrderCompletion('Razorpay', result.response.razorpay_payment_id, verifyRes.order);
+          return;
+        } else {
+          console.warn('Payment verification returned notice:', verifyRes.error);
+        }
+      }
+
+      // If signature couldn't be verified immediately (e.g. secret key pending), confirm in pending verification status
+      processOrderCompletion('Razorpay', result.response.razorpay_payment_id, pendingOrder);
     } else {
       setIsSubmitting(false);
       setErrorMessage(result.error || 'Payment was cancelled or could not be initiated.');
@@ -144,10 +188,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (formData.paymentMethod === 'Razorpay' && isRazorpayConfigured(razorpayKey)) {
       handleRazorpayCheckout();
     } else {
-      setIsSubmitting(true);
-      setTimeout(() => {
-        processOrderCompletion(formData.paymentMethod);
-      }, 800);
+      processOrderCompletion(formData.paymentMethod);
     }
   };
 

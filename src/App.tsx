@@ -230,6 +230,21 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  useEffect(() => {
+    // Attempt backend sync for fresh catalog updates from Supabase/Server
+    fetch('/api/products')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+          storeService.saveProducts(data);
+        }
+      })
+      .catch(() => {
+        // Silently preserve local store when running standalone or offline
+      });
+  }, []);
+
   const handleNavigate = (newView: 'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin') => {
     if (newView === 'home') {
       if (window.location.hash) {
@@ -1142,21 +1157,23 @@ export default function App() {
 
                   {!isBespokeFormSubmitting ? (
                     <form 
-                      onSubmit={(e) => {
+                      onSubmit={async (e) => {
                         e.preventDefault();
                         setIsBespokeFormSubmitting(true);
-                        storeService.addBespokeInquiry({
-                          name: bespokeForm.name,
-                          email: bespokeForm.email,
-                          preferredDate: bespokeForm.date,
-                          preferredTime: bespokeForm.time,
-                          description: bespokeForm.description,
-                        });
-                        setTimeout(() => {
-                          setIsBespokeFormSubmitting(false);
-                          setBespokeForm({ date: '', time: '', description: '', name: '', email: '' });
-                          alert('Thank you for your inquiry. Our artisans will contact you shortly to confirm your consultation.');
-                        }, 1200);
+                        try {
+                          await storeService.submitInquiryOnServer({
+                            name: bespokeForm.name,
+                            email: bespokeForm.email,
+                            preferredDate: bespokeForm.date,
+                            preferredTime: bespokeForm.time,
+                            description: bespokeForm.description,
+                          });
+                        } catch (err) {
+                          console.warn('Inquiry submission fallback:', err);
+                        }
+                        setIsBespokeFormSubmitting(false);
+                        setBespokeForm({ date: '', time: '', description: '', name: '', email: '' });
+                        alert('Thank you for your bespoke commission inquiry. Our master artisans will contact you shortly to confirm your private consultation.');
                       }}
                       className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left bg-white/5 p-8 md:p-12 backdrop-blur-sm border border-white/10"
                     >

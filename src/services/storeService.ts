@@ -248,6 +248,144 @@ export const storeService = {
     return newOrder;
   },
 
+  /**
+   * Async server-backed order creation with server-side price recalculation
+   */
+  async createOrderOnServer(orderData: {
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    shippingAddress: string;
+    city: string;
+    country: string;
+    postalCode: string;
+    items: { id: string; quantity: number }[];
+    paymentMethod: Order['paymentMethod'];
+    currency: string;
+    notes?: string;
+  }): Promise<{ success: boolean; order: Order; razorpayOrderId?: string; razorpayKeyId?: string; warning?: string; error?: string }> {
+    try {
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Sync local storage with verified order from server
+        const orders = this.getOrders();
+        const existingIdx = orders.findIndex(o => o.id === data.order.id);
+        if (existingIdx === -1) {
+          this.saveOrders([data.order, ...orders]);
+        }
+        return {
+          success: true,
+          order: data.order,
+          razorpayOrderId: data.razorpayOrderId,
+          razorpayKeyId: data.razorpayKeyId,
+          warning: data.warning
+        };
+      } else {
+        const errJson = await response.json().catch(() => ({}));
+        console.warn('Server order creation returned error:', errJson);
+      }
+    } catch (netErr) {
+      console.warn('Network call to /api/orders/create failed, falling back to local order reservation:', netErr);
+    }
+
+    // Fallback to local persistent store if offline or standalone Vite dev server
+    const localFallbackOrder = this.addOrder({
+      customerName: orderData.customerName,
+      customerEmail: orderData.customerEmail,
+      customerPhone: orderData.customerPhone,
+      shippingAddress: orderData.shippingAddress,
+      city: orderData.city,
+      country: orderData.country,
+      postalCode: orderData.postalCode,
+      items: orderData.items.map(i => {
+        const prod = this.getProducts().find(p => p.id === i.id);
+        return {
+          id: i.id,
+          name: prod?.name || 'Jewelry Piece',
+          price: prod?.price || '$0',
+          quantity: i.quantity,
+          image: prod?.image || '',
+          collection: prod?.collection || 'Collection'
+        };
+      }),
+      subtotal: 0,
+      currency: orderData.currency,
+      status: 'Preparing Atelier',
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: 'Pending Verification',
+      notes: orderData.notes
+    });
+
+    return {
+      success: true,
+      order: localFallbackOrder,
+      warning: 'Order saved in local atelier ledger (Offline/Local mode).'
+    };
+  },
+
+  /**
+   * Cryptographic signature verification with Express server
+   */
+  async verifyPaymentOnServer(verificationData: {
+    orderId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<{ success: boolean; order?: Order; error?: string }> {
+    try {
+      const response = await fetch('/api/orders/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(verificationData)
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        if (data.order) {
+          const orders = this.getOrders().map(o => o.id === data.order.id ? data.order : o);
+          this.saveOrders(orders);
+        }
+        return { success: true, order: data.order };
+      } else {
+        return { success: false, error: data.error || 'Payment signature verification failed on server.' };
+      }
+    } catch (e: any) {
+      console.error('Failed to communicate with payment verification endpoint:', e);
+      return { success: false, error: 'Payment verification service unreachable.' };
+    }
+  },
+
+  /**
+   * Submit bespoke inquiry to backend API
+   */
+  async submitInquiryOnServer(inquiryData: Omit<BespokeInquiry, 'id' | 'createdAt' | 'status'> & { phone?: string }): Promise<{ success: boolean; inquiry: BespokeInquiry; error?: string }> {
+    try {
+      const response = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inquiryData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const inquiries = this.getBespokeInquiries();
+        this.saveBespokeInquiries([data.inquiry, ...inquiries.filter(i => i.id !== data.inquiry.id)]);
+        return { success: true, inquiry: data.inquiry };
+      }
+    } catch (e) {
+      console.warn('Network call to /api/inquiries failed, saving locally:', e);
+    }
+
+    const localInquiry = this.addBespokeInquiry(inquiryData);
+    return { success: true, inquiry: localInquiry };
+  },
+
   updateOrderStatus(orderId: string, status: Order['status'], trackingNumber?: string): Order[] {
     const orders = this.getOrders();
     const updated = orders.map(order => {
