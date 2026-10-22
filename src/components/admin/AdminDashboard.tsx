@@ -221,10 +221,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Integrations Save
-  const handleSaveIntegrations = (e: React.FormEvent) => {
+  const handleSaveIntegrations = async (e: React.FormEvent) => {
     e.preventDefault();
-    storeService.saveIntegrationConfig(integrationConfig);
-    showToast('Payment gateways & Supabase configuration updated.');
+    let isConnected = false;
+    if (integrationConfig.supabaseUrl && integrationConfig.supabaseAnonKey) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const testClient = createClient(integrationConfig.supabaseUrl, integrationConfig.supabaseAnonKey);
+        const { error } = await testClient.from('products').select('id', { count: 'exact', head: true });
+        isConnected = !error;
+      } catch {
+        isConnected = false;
+      }
+    }
+    const updated = { 
+      ...integrationConfig, 
+      supabaseConnected: isConnected,
+      razorpayEnabled: Boolean(integrationConfig.razorpayKeyId && !integrationConfig.razorpayKeyId.includes('YOUR_KEY_ID'))
+    };
+    setIntegrationConfig(updated);
+    storeService.saveIntegrationConfig(updated);
+    showToast(isConnected ? 'Supabase connected successfully & credentials saved!' : 'Payment gateways & configuration saved.');
   };
 
   // Export / Import

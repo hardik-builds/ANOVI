@@ -1,5 +1,6 @@
 import { JEWELRY_ITEMS, ARCHIVE_ITEMS, BESPOKE_ITEMS } from '../constants';
 import { JewelryItem, BespokeItem, Order, BespokeInquiry, WebsiteSettings, IntegrationConfig } from '../types';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'anovi_products_v4',
@@ -10,6 +11,13 @@ const STORAGE_KEYS = {
   INTEGRATIONS: 'anovi_integrations_v2',
   ADMIN_AUTH: 'anovi_admin_authenticated',
 };
+
+const envSupabaseUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SUPABASE_URL) || '';
+const envSupabaseKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SUPABASE_ANON_KEY) || '';
+const envRazorpayKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_RAZORPAY_KEY_ID) || '';
+const isRazorpayPlaceholder = !envRazorpayKey || envRazorpayKey.includes('YOUR_KEY_ID') || envRazorpayKey.includes('ANOVIJewelsLive102');
+
+let activeSupabaseClient: SupabaseClient | null = null;
 
 export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   announcementBarEnabled: true,
@@ -25,13 +33,10 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   freeShippingThreshold: 5000,
 };
 
-const envRazorpayKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_RAZORPAY_KEY_ID) || '';
-const isRazorpayPlaceholder = !envRazorpayKey || envRazorpayKey.includes('YOUR_KEY_ID') || envRazorpayKey.includes('ANOVIJewelsLive102');
-
 export const DEFAULT_INTEGRATION_CONFIG: IntegrationConfig = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-  supabaseConnected: false,
+  supabaseUrl: envSupabaseUrl,
+  supabaseAnonKey: envSupabaseKey,
+  supabaseConnected: Boolean(envSupabaseUrl && envSupabaseKey && envSupabaseUrl.startsWith('https://')),
   stripePublishableKey: '',
   stripeSecretKeyConfigured: false,
   razorpayKeyId: isRazorpayPlaceholder ? '' : envRazorpayKey,
@@ -40,6 +45,41 @@ export const DEFAULT_INTEGRATION_CONFIG: IntegrationConfig = {
   codEnabled: true,
   bankWireEnabled: true,
   testMode: true,
+};
+
+export const getSupabaseClient = (): SupabaseClient | null => {
+  if (activeSupabaseClient) return activeSupabaseClient;
+
+  let url = envSupabaseUrl;
+  let key = envSupabaseKey;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.INTEGRATIONS);
+    if (raw) {
+      const cfg = JSON.parse(raw);
+      if (cfg.supabaseUrl) url = cfg.supabaseUrl;
+      if (cfg.supabaseAnonKey) key = cfg.supabaseAnonKey;
+    }
+  } catch (e) {
+    console.warn('Could not read integration config for Supabase:', e);
+  }
+
+  if (
+    url &&
+    key &&
+    url.startsWith('https://') &&
+    !url.includes('vklqfbmrtyuzxjwkmnop') &&
+    key.length > 20
+  ) {
+    try {
+      activeSupabaseClient = createClient(url, key);
+      return activeSupabaseClient;
+    } catch (err) {
+      console.warn('Supabase client initialization error:', err);
+    }
+  }
+
+  return null;
 };
 
 export const INITIAL_SAMPLE_ORDERS: Order[] = [
@@ -141,6 +181,59 @@ export const storeService = {
     // initialize
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(JEWELRY_ITEMS));
     return JEWELRY_ITEMS;
+  },
+
+  async fetchProducts(): Promise<JewelryItem[]> {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapped: JewelryItem[] = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            collection: item.collection,
+            category: item.category,
+            subCategory: item.sub_category,
+            price: typeof item.price === 'number' ? `$${item.price.toLocaleString()}` : item.price,
+            image: item.image,
+            images: item.images || [item.image],
+            video: item.video,
+            description: item.description,
+            materials: item.materials,
+            shippingCost: item.shipping_cost ? `$${item.shipping_cost}` : '$0',
+            details: item.details || [],
+            inStock: item.in_stock,
+            stockCount: item.stock_count,
+            featured: item.featured,
+            createdAt: item.created_at,
+          }));
+          this.saveProducts(mapped);
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch products error:', err);
+      }
+    }
+
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          this.saveProducts(data);
+          return data;
+        }
+      }
+    } catch {
+      // offline / standalone
+    }
+
+    return this.getProducts();
   },
 
   saveProducts(products: JewelryItem[]): void {
@@ -245,6 +338,34 @@ export const storeService = {
     };
     const updated = [newOrder, ...orders];
     this.saveOrders(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      Promise.resolve(
+        supabase.from('orders').insert({
+          id: newOrder.id,
+          order_number: newOrder.orderNumber,
+          customer_name: newOrder.customerName,
+          customer_email: newOrder.customerEmail,
+          customer_phone: newOrder.customerPhone,
+          shipping_address: newOrder.shippingAddress,
+          city: newOrder.city,
+          country: newOrder.country,
+          postal_code: newOrder.postalCode,
+          currency: newOrder.currency,
+          subtotal: newOrder.subtotal,
+          total_amount: newOrder.subtotal,
+          payment_method: newOrder.paymentMethod,
+          payment_status: newOrder.paymentStatus,
+          status: newOrder.status,
+          notes: newOrder.notes,
+          created_at: newOrder.createdAt
+        })
+      ).then(({ error }: any) => {
+        if (error) console.warn('Supabase client order insert notice:', error.message);
+      }).catch((e: any) => console.warn('Supabase client order insert error:', e));
+    }
+
     return newOrder;
   },
 
@@ -421,7 +542,7 @@ export const storeService = {
     }
   },
 
-  addBespokeInquiry(inquiryData: Omit<BespokeInquiry, 'id' | 'createdAt' | 'status'>): BespokeInquiry {
+  addBespokeInquiry(inquiryData: Omit<BespokeInquiry, 'id' | 'createdAt' | 'status'> & { phone?: string }): BespokeInquiry {
     const inquiries = this.getBespokeInquiries();
     const newInquiry: BespokeInquiry = {
       ...inquiryData,
@@ -431,6 +552,26 @@ export const storeService = {
     };
     const updated = [newInquiry, ...inquiries];
     this.saveBespokeInquiries(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      Promise.resolve(
+        supabase.from('inquiries').insert({
+          id: newInquiry.id,
+          customer_name: newInquiry.name,
+          customer_email: newInquiry.email,
+          phone: inquiryData.phone || '',
+          preferred_date: newInquiry.preferredDate || null,
+          preferred_time: newInquiry.preferredTime || null,
+          message: newInquiry.description,
+          status: 'New Inquiry',
+          created_at: newInquiry.createdAt
+        })
+      ).then(({ error }: any) => {
+        if (error) console.warn('Supabase client inquiry insert notice:', error.message);
+      }).catch((e: any) => console.warn('Supabase client inquiry insert error:', e));
+    }
+
     return newInquiry;
   },
 
