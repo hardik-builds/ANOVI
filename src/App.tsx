@@ -46,6 +46,18 @@ const PinterestIcon = ({ size = 14 }: { size?: number }) => (
   </svg>
 );
 
+const FALLBACK_JEWELRY_IMAGE = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+
+const getViewFromHash = (): 'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin' => {
+  if (typeof window === 'undefined') return 'home';
+  const hash = window.location.hash.toLowerCase();
+  if (hash === '#admin' || window.location.search.includes('admin=true')) return 'admin';
+  if (hash === '#collections') return 'collections';
+  if (hash === '#archive') return 'archive';
+  if (hash === '#bespoke') return 'bespoke';
+  return 'home';
+};
+
 const ProductCard: React.FC<{ 
   item: any; 
   index: number; 
@@ -70,6 +82,9 @@ const ProductCard: React.FC<{
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = FALLBACK_JEWELRY_IMAGE;
+          }}
         />
         
         {/* Quick Actions - Top Right Icon */}
@@ -116,7 +131,7 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [view, setView] = useState<'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin'>('home');
+  const [view, setView] = useState<'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin'>(getViewFromHash);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -207,17 +222,28 @@ export default function App() {
   }, [view, HERO_SLIDES.length]);
 
   useEffect(() => {
-    if (window.location.hash === '#admin' || window.location.search.includes('admin=true')) {
-      setView('admin');
-    }
+    const handleHashChange = () => {
+      const targetView = getViewFromHash();
+      setView(targetView);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const handleNavigate = (newView: 'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin') => {
-    if (view === newView && newView !== 'product') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (newView === 'home') {
+      if (window.location.hash) {
+        try {
+          history.pushState(null, '', window.location.pathname + window.location.search);
+        } catch {
+          window.location.hash = '';
+        }
+      }
     } else {
-      setView(newView);
+      window.location.hash = `#${newView}`;
     }
+    setView(newView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsMenuOpen(false);
   };
 
@@ -741,7 +767,7 @@ export default function App() {
                 <Key size={22} className="text-gold" />
                 <span>Atelier Admin</span>
               </button>
-              <button className="text-left" onClick={() => setIsMenuOpen(false)}>Contact</button>
+              <button className="text-left" onClick={() => handleNavigate('bespoke')}>Contact Concierge</button>
             </div>
           </motion.div>
         )}

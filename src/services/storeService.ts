@@ -2,8 +2,8 @@ import { JEWELRY_ITEMS, ARCHIVE_ITEMS, BESPOKE_ITEMS } from '../constants';
 import { JewelryItem, BespokeItem, Order, BespokeInquiry, WebsiteSettings, IntegrationConfig } from '../types';
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'anovi_products_v3',
-  ARCHIVE: 'anovi_archive_v2',
+  PRODUCTS: 'anovi_products_v4',
+  ARCHIVE: 'anovi_archive_v3',
   ORDERS: 'anovi_orders_v2',
   INQUIRIES: 'anovi_inquiries_v2',
   SETTINGS: 'anovi_settings_v2',
@@ -25,15 +25,18 @@ export const DEFAULT_WEBSITE_SETTINGS: WebsiteSettings = {
   freeShippingThreshold: 5000,
 };
 
+const envRazorpayKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_RAZORPAY_KEY_ID) || '';
+const isRazorpayPlaceholder = !envRazorpayKey || envRazorpayKey.includes('YOUR_KEY_ID') || envRazorpayKey.includes('ANOVIJewelsLive102');
+
 export const DEFAULT_INTEGRATION_CONFIG: IntegrationConfig = {
-  supabaseUrl: 'https://vklqfbmrtyuzxjwkmnop.supabase.co',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODg5ODgyMDB9',
+  supabaseUrl: '',
+  supabaseAnonKey: '',
   supabaseConnected: false,
-  stripePublishableKey: 'pk_test_51MzANOVI_FineJewelry_789420000',
-  stripeSecretKeyConfigured: true,
-  razorpayKeyId: 'rzp_test_ANOVIJewelsLive102',
-  razorpayEnabled: true,
-  stripeEnabled: true,
+  stripePublishableKey: '',
+  stripeSecretKeyConfigured: false,
+  razorpayKeyId: isRazorpayPlaceholder ? '' : envRazorpayKey,
+  razorpayEnabled: !isRazorpayPlaceholder,
+  stripeEnabled: false,
   codEnabled: true,
   bankWireEnabled: true,
   testMode: true,
@@ -56,7 +59,7 @@ export const INITIAL_SAMPLE_ORDERS: Order[] = [
         name: 'Ethereal Pearl Drops',
         price: '$4,200',
         quantity: 1,
-        image: 'https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800',
         collection: "L'Aurore",
       }
     ],
@@ -65,7 +68,7 @@ export const INITIAL_SAMPLE_ORDERS: Order[] = [
     status: 'Shipped & Insured',
     trackingNumber: 'DHL-EX-9928104821',
     paymentMethod: 'Credit Card / Stripe',
-    paymentStatus: 'Paid',
+    paymentStatus: 'Pending Verification',
     createdAt: '2026-03-28T14:22:00Z',
     notes: 'Gift wrapped in royal green velvet presentation box with handwritten wax-sealed certificate.'
   },
@@ -85,7 +88,7 @@ export const INITIAL_SAMPLE_ORDERS: Order[] = [
         name: 'Celestial Sapphire Hoops',
         price: '$8,500',
         quantity: 1,
-        image: 'https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=800',
         collection: 'Nocturne',
       }
     ],
@@ -94,7 +97,7 @@ export const INITIAL_SAMPLE_ORDERS: Order[] = [
     status: 'Preparing Atelier',
     trackingNumber: 'PENDING_DISPATCH',
     paymentMethod: 'Razorpay',
-    paymentStatus: 'Paid',
+    paymentStatus: 'Pending Verification',
     createdAt: '2026-04-01T09:15:00Z',
     notes: 'Requested custom engraving on inside clasp: "Always A&S 2026"'
   }

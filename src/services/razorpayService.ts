@@ -30,6 +30,13 @@ export interface RazorpayOptions {
   handler?: (response: RazorpayResponse) => void;
 }
 
+export const isRazorpayConfigured = (key?: string): boolean => {
+  if (!key) return false;
+  const trimmed = key.trim();
+  if (trimmed.includes('YOUR_KEY_ID') || trimmed.includes('ANOVIJewelsLive102')) return false;
+  return trimmed.startsWith('rzp_test_') || trimmed.startsWith('rzp_live_');
+};
+
 export const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (typeof window === 'undefined') {
@@ -57,6 +64,13 @@ export const loadRazorpayScript = (): Promise<boolean> => {
 export const initializeRazorpayPayment = async (
   options: RazorpayOptions
 ): Promise<{ success: boolean; response?: RazorpayResponse; error?: string }> => {
+  if (!isRazorpayConfigured(options.key)) {
+    return {
+      success: false,
+      error: 'Razorpay Gateway is pending merchant credentials approval. Online payment is temporarily unavailable. Please place your commission order via Private Wire or Concierge Inquiries.',
+    };
+  }
+
   const loaded = await loadRazorpayScript();
   if (!loaded) {
     return {

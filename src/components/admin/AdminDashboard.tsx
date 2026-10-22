@@ -334,6 +334,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="font-serif text-xl tracking-wider text-gold font-light">ANOVI</span>
             <span className="text-[9px] uppercase tracking-[0.3em] text-white/50 font-mono">Atelier Administration</span>
           </div>
+          <span className="hidden sm:inline-block text-[9px] uppercase tracking-widest px-2.5 py-1 border border-gold/30 text-gold/80 bg-gold/5 font-mono">
+            Exhibition Terminal · Local Storage
+          </span>
         </div>
 
         {/* Center Zone: Clean Single-Line Nav Tabs */}
@@ -531,8 +534,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   alt={product.name} 
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    // fallback if image fails
-                                    (e.target as HTMLElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
                                   }}
                                 />
                               </div>
@@ -838,7 +840,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {archiveItems.map((item) => (
                 <div key={item.id} className="bg-[#181818] border border-white/10 overflow-hidden group">
                   <div className="relative aspect-[4/3] bg-black/40">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                      }}
+                    />
                     <button
                       onClick={() => handleDeleteArchiveItem(item.id, item.name)}
                       className="absolute top-2 right-2 bg-onyx/80 p-2 text-white/70 hover:text-red-400 transition-colors"
@@ -1205,9 +1214,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <h4 className="text-[10px] uppercase tracking-[0.25em] text-gold font-bold flex items-center gap-2">
                     <Database size={13} /> 2. Supabase Cloud Database Integration
                   </h4>
-                  <span className="text-[9px] uppercase tracking-widest px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                    Configuration Ready
+                  <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 border ${
+                    integrationConfig.supabaseConnected
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                      : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                  }`}>
+                    {integrationConfig.supabaseConnected ? 'Database Connected' : 'Local Storage Mode (Stand-Alone)'}
                   </span>
+                </div>
+
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200/90 leading-relaxed">
+                  <strong>Notice for Exhibition:</strong> The catalogue currently operates with high reliability using browser-local persistent storage. Modifications made in this admin panel persist on this device terminal. Multi-device synchronization requires provisioning a verified Supabase project with production database tables and public anon key.
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1247,7 +1264,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     2. Run the SQL table migration script for <code className="text-white">products</code>, <code className="text-white">orders</code>, and <code className="text-white">inquiries</code> tables.
                   </p>
                   <p className="leading-relaxed">
-                    3. Paste your Project URL and Anon API key above. The app stores all catalog modifications in client-side persistence and can synchronize directly with Supabase tables.
+                    3. Paste your Project URL and Anon API key above. Once verified, records will synchronize automatically with the remote database.
                   </p>
                 </div>
               </div>

@@ -230,6 +230,9 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                   }}
                   className="max-h-[85vh] w-auto max-w-[90%] object-contain select-none transition-transform duration-500 hover:scale-[1.02]"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                  }}
                 />
               )}
 
@@ -295,6 +298,9 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                       alt={`${product.name} Second View`}
                       className="max-h-[85vh] w-auto max-w-[90%] object-contain select-none transition-transform duration-700 group-hover:scale-105"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                      }}
                     />
                     
                     <div className="absolute top-24 left-8 text-[9px] uppercase tracking-[0.3em] text-onyx/40 font-mono">
@@ -370,6 +376,9 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                       alt={product.name} 
                       className="w-full h-full object-cover" 
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                      }}
                     />
                   </div>
                   <div className="min-w-0">

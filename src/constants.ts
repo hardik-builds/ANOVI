@@ -23,7 +23,7 @@ export const BESPOKE_ITEMS: BespokeItem[] = [
     name: "Art Deco Revival",
     description: "Restoration and enhancement of a 1920s emerald ring.",
     beforeImage: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=800",
-    afterImage: "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=800",
+    afterImage: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800",
     story: "A classic Art Deco ring that had lost its luster. We replaced the worn side stones with high-clarity baguettes and reinforced the platinum setting, while preserving the original intricate filigree work.",
     date: "January 2026"
   }
@@ -40,7 +40,7 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200",
     images: [
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "An imperial double-strand of lustrous Akoya pearls crowned with an archival floral medallion. Centered around a luminous natural cabochon emerald encased in rose-cut diamond lotus petals, culminating in three suspended South Sea teardrop pearls.",
@@ -80,10 +80,10 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Lumière",
     category: "Earrings",
     price: "$9,800",
-    image: "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200",
     images: [
-      "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "A pair of sculptural floral snowflake stud earrings radiating celestial brilliance. Each piece features a central brilliant-cut solitaire diamond surrounded by eight delicate petals of prong-set round diamonds in two-tone white and yellow gold.",
     materials: "18k Two-Tone Gold, 3.60ct F/VVS Brilliant-Cut Diamonds",
@@ -101,9 +101,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Lumière",
     category: "Earrings",
     price: "$14,200",
-    image: "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200",
     images: [
-      "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "Timeless oval-cut diamond solitaire stud earrings of breathtaking clarity and proportions. Set in minimalist four-prong platinum baskets designed to capture and amplify maximum natural light from every perspective.",
@@ -125,7 +125,7 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200",
     images: [
       "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "A masterwork of historical goldsmithing, this wide 22k yellow gold hinged bangle features dual milgrain beaded borders, twisted cord filigree, and a continuous openwork floral vine set with diamond-encrusted flower clusters and square station centerpieces.",
     materials: "22k Yellow Gold, Black Rhodium Accents, 2.85ct Brilliant-Cut Diamonds",
@@ -144,13 +144,12 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "L'Aurore",
     category: "Earrings",
     price: "$4,200",
-    image: "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1544760310-8707fb345ce7?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-shiny-diamond-ring-4424-large.mp4",
     description: "Hand-selected South Sea pearls suspended from 18k white gold and pavé diamonds.",
     materials: "18k White Gold, South Sea Pearls, 0.45ct Pavé Diamonds",
     shippingCost: "$50",
@@ -183,13 +182,12 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Nocturne",
     category: "Earrings",
     price: "$8,500",
-    image: "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-diamond-ring-rotating-on-a-black-background-4425-large.mp4",
     description: "Deep blue Ceylon sapphires set in a continuous circle of brilliant-cut diamonds.",
     materials: "18k White Gold, 3.2ct Ceylon Sapphires, 1.1ct Diamonds",
     shippingCost: "$75",
@@ -215,13 +213,12 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Heritage",
     category: "Earrings",
     price: "$3,800",
-    image: "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-gold-jewelry-shining-under-the-light-4426-large.mp4",
     description: "Fluid 22k yellow gold links that catch the light with every movement.",
     materials: "22k Yellow Gold",
     shippingCost: "$40",
@@ -243,9 +240,8 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     images: [
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-diamond-necklace-shining-on-a-display-4427-large.mp4",
     description: "A breathtaking arrangement of pear-shaped diamonds totaling 12 carats.",
     materials: "Platinum, 12ct Pear-Shaped Diamonds",
     shippingCost: "$150",
@@ -265,10 +261,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     image: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=800",
     images: [
       "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-emerald-pendant-rotating-slowly-4428-large.mp4",
     description: "A deep green Zambian emerald surrounded by a halo of micro-pavé diamonds.",
     materials: "18k Yellow Gold, 4.5ct Zambian Emerald, 0.8ct Diamonds",
     shippingCost: "$100",
@@ -286,13 +281,12 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Lumière",
     category: "Rings",
     price: "$12,000",
-    image: "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-diamond-ring-sparkling-in-the-sun-4429-large.mp4",
     description: "Two-carat total weight GIA certified diamonds in our signature minimalist setting.",
     materials: "18k White Gold, 2.0ct GIA Diamond",
     shippingCost: "$80",
@@ -312,10 +306,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=800",
     images: [
       "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1611085583191-a3b13b24424a?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-ruby-ring-on-a-rotating-platform-4430-large.mp4",
     description: "A continuous line of pigeon-blood rubies set in 18k rose gold.",
     materials: "18k Rose Gold, 2.5ct Pigeon-Blood Rubies",
     shippingCost: "$60",
@@ -339,7 +332,6 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
       "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&q=80&w=1200",
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200"
     ],
-    video: "https://assets.mixkit.co/videos/preview/mixkit-diamond-bracelet-shimmering-under-studio-lights-4431-large.mp4",
     description: "A sculptural masterpiece featuring interlaced bands of white gold and diamonds.",
     materials: "18k White Gold, 5.0ct Diamonds",
     shippingCost: "$120",
@@ -358,10 +350,10 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     category: "Pearls",
     subCategory: "Akoya",
     price: "$1,800",
-    image: "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=1200",
-      "https://images.unsplash.com/photo-1544760310-8707fb345ce7?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200",
+      "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "Classic 8mm Akoya pearls with exceptional luster, set in 18k white gold.",
     materials: "8mm Akoya Pearls, 18k White Gold",
@@ -380,9 +372,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     category: "Pearls",
     subCategory: "Tahitian",
     price: "$3,500",
-    image: "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1635767790417-22e83b18dfbd?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "A single, dark Tahitian pearl with peacock overtones, suspended from a diamond-set bail.",
     materials: "11mm Tahitian Pearl, 18k White Gold, 0.15ct Diamonds",
@@ -444,9 +436,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     category: "Silver",
     subCategory: "Earrings",
     price: "$450",
-    image: "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1535633302704-c02fbc4d2282?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "Cascading sterling silver discs that reflect the soft glow of moonlight.",
     materials: "925 Sterling Silver",
@@ -464,9 +456,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     collection: "Nocturne",
     category: "Silver",
     price: "$320",
-    image: "https://images.unsplash.com/photo-1622398476015-50868d6081bd?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1622398476015-50868d6081bd?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "A coiled serpent ring in oxidized sterling silver with emerald-set eyes.",
     materials: "Oxidized Sterling Silver, Nano-Emeralds",
@@ -507,9 +499,9 @@ export const JEWELRY_ITEMS: JewelryItem[] = [
     category: "Radiance",
     subCategory: "Earrings",
     price: "$1,200",
-    image: "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=800",
     images: [
-      "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200"
     ],
     description: "Brilliant-cut stones set in 18k white gold, radiating a celestial glow.",
     materials: "18k White Gold, Brilliant-Cut Stones",
@@ -602,7 +594,7 @@ export const ARCHIVE_ITEMS: JewelryItem[] = [
     collection: "Nocturne Archive",
     category: "Rings",
     price: "$3,500 (Original Price)",
-    image: "https://images.unsplash.com/photo-1622398476015-50868d6081bd?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&q=80&w=800",
     description: "A bold onyx statement ring with hidden diamond details. Circa 2019."
   },
   {
@@ -620,7 +612,7 @@ export const ARCHIVE_ITEMS: JewelryItem[] = [
     collection: "Heritage Archive",
     category: "Earrings",
     price: "$2,100 (Original Price)",
-    image: "https://images.unsplash.com/photo-1630030538573-5dd25e6cd2a6?auto=format&fit=crop&q=80&w=800",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&q=80&w=800",
     description: "Intricate 22k gold leaf patterns that gracefully follow the ear's curve. Circa 2020."
   }
 ];

@@ -309,6 +309,9 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
                       alt={item.name}
                       className="w-full h-full object-cover object-center pointer-events-none transition-transform duration-700 hover:scale-105"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                      }}
                     />
 
                     {/* Subtle atmospheric vignette */}

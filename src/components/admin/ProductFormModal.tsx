@@ -370,7 +370,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
                 {image && (
                   <div className="relative aspect-square max-w-[200px] border border-onyx/10 overflow-hidden bg-onyx/5 group mt-3">
-                    <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                    <img 
+                      src={image} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                      }}
+                    />
                     <button
                       type="button"
                       onClick={() => setImage('')}
@@ -413,7 +420,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     ) : (
                       additionalImages.map((img, idx) => (
                         <div key={idx} className="relative w-14 h-14 border border-onyx/10 group overflow-hidden bg-onyx/5">
-                          <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                          <img 
+                            src={img} 
+                            alt={`Gallery ${idx}`} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
+                            }}
+                          />
                           <button
                             type="button"
                             onClick={() => handleRemoveGalleryImage(idx)}

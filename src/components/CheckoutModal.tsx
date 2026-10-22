@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, CheckCircle2, CreditCard, DollarSign, Lock, Truck, Info, ExternalLink, Zap, Check } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, CreditCard, DollarSign, Lock, Truck, Info, ExternalLink, Zap, Check, AlertTriangle } from 'lucide-react';
 import { Order, OrderItem } from '../types';
 import { storeService } from '../services/storeService';
-import { initializeRazorpayPayment, loadRazorpayScript } from '../services/razorpayService';
+import { initializeRazorpayPayment, loadRazorpayScript, isRazorpayConfigured } from '../services/razorpayService';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -38,10 +38,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     city: '',
     country: 'United States',
     postalCode: '',
-    paymentMethod: 'Razorpay' as Order['paymentMethod'],
-    cardNumber: '•••• •••• •••• 4242',
-    cardExp: '12/28',
-    cardCvc: '•••',
+    paymentMethod: 'Bank Wire' as Order['paymentMethod'],
     specialNotes: '',
   });
 
@@ -55,7 +52,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       const integrations = storeService.getIntegrationConfig();
-      setRazorpayKey(integrations.razorpayKeyId || 'rzp_test_ANOVIJewelsLive102');
+      setRazorpayKey(integrations.razorpayKeyId || '');
       loadRazorpayScript();
       setErrorMessage(null);
     }
@@ -73,6 +70,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       collection: item.collection,
     }));
 
+    // Security requirement: Never mark orders as Paid solely from frontend reports or unintegrated methods
     const newOrder = storeService.addOrder({
       customerName: formData.name || 'Private Patron',
       customerEmail: formData.email || 'client@atelier.anovi.com',
@@ -87,10 +85,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       status: 'Preparing Atelier',
       trackingNumber: 'PENDING_ATELIER_DISPATCH',
       paymentMethod: method,
-      paymentStatus: 'Paid',
+      paymentStatus: 'Pending Verification',
       notes: paymentId 
-        ? `Razorpay Payment ID: ${paymentId} | Verified Settlement via Razorpay Gateway.`
-        : formData.specialNotes || 'Complimentary velvet presentation box with wax-sealed certificate of authenticity requested.'
+        ? `Transaction ID: ${paymentId} (Pending server verification) | ${formData.specialNotes || 'Client acquisition request'}`
+        : formData.specialNotes || 'Acquisition order placed pending concierge verification and insured dispatch schedule.'
     });
 
     setIsSubmitting(false);
@@ -100,18 +98,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleRazorpayCheckout = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
-      setErrorMessage('Please provide your Name, Email, and Phone number before proceeding to payment.');
+      setErrorMessage('Please provide your Name, Email, and Phone number before proceeding.');
       return;
     }
+
+    if (!isRazorpayConfigured(razorpayKey)) {
+      setErrorMessage('Razorpay Gateway is pending live merchant credentials approval. Online payment is temporarily paused for this exhibition. Please select "Private Bank Wire" or "Armored Courier COD" to submit your commission reservation.');
+      return;
+    }
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const activeKey = razorpayKey || 'rzp_test_ANOVIJewelsLive102';
-    // Amount in subunits (e.g. INR paise or USD cents)
     const amountInSubunits = Math.round((subtotalNumber || 1000) * 100);
 
     const result = await initializeRazorpayPayment({
-      key: activeKey,
+      key: razorpayKey,
       amount: amountInSubunits,
       currency: currency === 'INR' ? 'INR' : 'USD',
       name: 'ANOVI Haute Joaillerie',
@@ -133,20 +135,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       processOrderCompletion('Razorpay', result.response.razorpay_payment_id);
     } else {
       setIsSubmitting(false);
-      // If error or test key failed to launch due to invalid test domain, provide friendly simulation option
       setErrorMessage(result.error || 'Payment was cancelled or could not be initiated.');
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.paymentMethod === 'Razorpay') {
+    if (formData.paymentMethod === 'Razorpay' && isRazorpayConfigured(razorpayKey)) {
       handleRazorpayCheckout();
     } else {
       setIsSubmitting(true);
       setTimeout(() => {
         processOrderCompletion(formData.paymentMethod);
-      }, 1200);
+      }, 800);
     }
   };
 
@@ -177,10 +178,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-bold">Acquisition Confirmed</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-gold font-bold">Commission Registered</p>
               <h2 className="text-3xl font-serif italic text-onyx">{confirmedOrder.orderNumber}</h2>
               <p className="text-xs text-onyx/60 max-w-md mx-auto leading-relaxed">
-                Thank you, {confirmedOrder.customerName}. Your commission is now entering our London atelier for final inspection, ultrasonic cleaning, and armored insured dispatch.
+                Thank you, {confirmedOrder.customerName}. Your bespoke acquisition request has been entered into the Atelier ledger. Our private client concierge will contact you to verify settlement details and arrange armored insured dispatch.
               </p>
             </div>
 
@@ -194,28 +195,34 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <span className="font-medium text-right">{confirmedOrder.shippingAddress}, {confirmedOrder.city}</span>
               </div>
               <div className="flex justify-between border-b border-onyx/5 pb-2">
-                <span className="text-onyx/50">Payment Gateway:</span>
+                <span className="text-onyx/50">Payment Settlement:</span>
                 <span className="font-medium flex items-center gap-1.5 text-gold font-semibold">
                   <Check size={14} /> {confirmedOrder.paymentMethod}
                 </span>
               </div>
+              <div className="flex justify-between border-b border-onyx/5 pb-2">
+                <span className="text-onyx/50">Settlement Verification:</span>
+                <span className="font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[11px]">
+                  Pending Atelier Verification
+                </span>
+              </div>
               {razorpayPaymentId && (
                 <div className="flex justify-between border-b border-onyx/5 pb-2">
-                  <span className="text-onyx/50">Razorpay Payment ID:</span>
-                  <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px]">
+                  <span className="text-onyx/50">Reference ID:</span>
+                  <span className="font-mono text-onyx bg-onyx/5 px-2 py-0.5 rounded text-[11px]">
                     {razorpayPaymentId}
                   </span>
                 </div>
               )}
               <div className="flex justify-between pt-1">
-                <span className="text-gold font-bold">Total Settled:</span>
+                <span className="text-gold font-bold">Acquisition Value:</span>
                 <span className="text-gold font-serif text-lg font-bold">{totalFormatted}</span>
               </div>
             </div>
 
             <p className="text-[10px] text-onyx/50 uppercase tracking-widest flex items-center justify-center gap-2">
               <ShieldCheck size={14} className="text-gold" />
-              This acquisition has been logged into the Atelier Administration vault.
+              Recorded in the Atelier Administration vault · White-glove insured delivery
             </p>
 
             <button
@@ -394,8 +401,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         R
                       </div>
                       <span className="font-semibold text-xs text-[#0C2340]">Razorpay Payment Gateway</span>
-                      <span className="text-[9px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded font-medium">
-                        Active Integration
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                        isRazorpayConfigured(razorpayKey)
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {isRazorpayConfigured(razorpayKey) ? 'Active Integration' : 'Pending Merchant Activation'}
                       </span>
                     </div>
                     
@@ -405,31 +416,42 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       className="text-[10px] text-gold hover:underline flex items-center gap-1 font-medium"
                     >
                       <Info size={12} />
-                      {showRazorpayGuide ? 'Hide Required Details' : 'What Details Are Required?'}
+                      {showRazorpayGuide ? 'Hide Details' : 'Gateway Information'}
                     </button>
                   </div>
 
-                  <p className="text-[11px] text-onyx/70 leading-relaxed">
-                    Settles via official <strong>Razorpay Checkout</strong>: supports <strong>UPI (GPay, PhonePe, Paytm, BHIM)</strong>, 
-                    Credit/Debit Cards (Visa, Mastercard, RuPay, Amex), and 50+ NetBanking options with instant instant webhook reconciliation.
-                  </p>
+                  {isRazorpayConfigured(razorpayKey) ? (
+                    <p className="text-[11px] text-onyx/70 leading-relaxed">
+                      Settles via official <strong>Razorpay Checkout</strong>: supports <strong>UPI (GPay, PhonePe, Paytm, BHIM)</strong>, 
+                      Credit/Debit Cards (Visa, Mastercard, RuPay, Amex), and 50+ NetBanking options with direct webhook reconciliation.
+                    </p>
+                  ) : (
+                    <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded text-[11px] text-amber-900 space-y-1">
+                      <div className="flex items-center gap-1.5 font-semibold text-amber-800">
+                        <AlertTriangle size={13} />
+                        <span>Online Card & UPI Gateway Pending Activation</span>
+                      </div>
+                      <p className="leading-relaxed text-amber-800/90">
+                        Direct merchant payment approval is pending. For the exhibition, you can place your commission order via <strong>Private Bank Wire</strong> or <strong>Armored Courier COD</strong>, and our atelier concierge will coordinate direct fulfillment.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Razorpay Credentials Required Info Drawer */}
                   {showRazorpayGuide && (
                     <div className="bg-[#FAF8F5] border border-gold/30 p-3 rounded text-[11px] space-y-2 text-onyx/80">
                       <div className="flex items-center gap-1.5 font-bold text-gold text-[11px]">
                         <Zap size={13} />
-                        <span>Razorpay Integration Credentials Checklist:</span>
+                        <span>Razorpay Merchant Activation Status:</span>
                       </div>
                       <ul className="list-disc list-inside space-y-1 text-onyx/75 pl-1">
-                        <li><strong>Key ID (`rzp_test_...` or `rzp_live_...`):</strong> The public identifier used by the client-side Razorpay Checkout widget.</li>
-                        <li><strong>Key Secret (`rzp_secret_...`):</strong> Kept private on backend to verify payment signatures via HMAC SHA-256.</li>
-                        <li><strong>Merchant KYC Details:</strong> Business PAN, Registered Company Name, and Bank Account (for automated daily settlements).</li>
-                        <li><strong>Enabled Currencies:</strong> Standard INR for India, or Razorpay International activated for USD / EUR luxury patrons.</li>
-                        <li><strong>Webhook Secret:</strong> (Optional) Configured in Razorpay Dashboard to notify your server of successful settlements.</li>
+                        <li><strong>Key ID Status:</strong> {isRazorpayConfigured(razorpayKey) ? 'Configured with live merchant ID.' : 'Awaiting live merchant credentials from dashboard.razorpay.com.'}</li>
+                        <li><strong>Payment Verification:</strong> Server-side HMAC SHA-256 webhook verification enabled once merchant secret is configured.</li>
+                        <li><strong>Supported Currencies:</strong> INR for domestic India patrons; USD / EUR for international atelier patrons.</li>
+                        <li><strong>Exhibition Fallback:</strong> Concierge Bank Wire and Insured Cash-on-Delivery remain active for high-value acquisitions.</li>
                       </ul>
                       <div className="pt-1 flex items-center justify-between">
-                        <span className="text-[10px] text-onyx/50">Obtain keys at dashboard.razorpay.com &rarr; Settings &rarr; API Keys</span>
+                        <span className="text-[10px] text-onyx/50">Merchant portal: dashboard.razorpay.com</span>
                         <a 
                           href="https://dashboard.razorpay.com" 
                           target="_blank" 
@@ -444,11 +466,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
                     <div className="flex items-center gap-2 text-[10px] text-onyx/60 font-mono bg-ivory px-2.5 py-1.5 border border-onyx/10">
-                      <span className="text-onyx/40">Key ID:</span>
-                      <span className="font-semibold text-onyx">{razorpayKey || 'rzp_test_ANOVIJewelsLive102'}</span>
+                      <span className="text-onyx/40">Status:</span>
+                      <span className="font-semibold text-onyx">
+                        {isRazorpayConfigured(razorpayKey) ? 'Ready to Launch' : 'Pending Merchant Key'}
+                      </span>
                     </div>
 
-                    <div className="flex gap-2">
+                    {isRazorpayConfigured(razorpayKey) ? (
                       <button
                         type="button"
                         onClick={handleRazorpayCheckout}
@@ -458,16 +482,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         <Zap size={12} />
                         <span>Launch Razorpay Gateway</span>
                       </button>
-
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => processOrderCompletion('Razorpay', `pay_sim_${Date.now()}`)}
-                        className="border border-onyx/20 text-onyx/70 px-3 py-2 text-[10px] uppercase tracking-wider hover:border-gold hover:text-gold transition-colors"
-                        title="Simulate instant settlement for development testing"
+                        onClick={() => processOrderCompletion('Razorpay')}
+                        disabled={isSubmitting}
+                        className="bg-onyx text-white px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-gold hover:text-onyx transition-colors flex items-center justify-center gap-1.5"
                       >
-                        Sandbox Pass
+                        <span>Reserve via Concierge</span>
                       </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -475,35 +499,43 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               {/* Credit Card / Stripe */}
               {formData.paymentMethod === 'Credit Card / Stripe' && (
                 <div className="p-4 bg-white border border-onyx/10 space-y-3">
-                  <div>
-                    <label className="block text-[9px] uppercase tracking-widest text-onyx/60 mb-1">Card Number (Encrypted Sandbox)</label>
-                    <input 
-                      type="text"
-                      value={formData.cardNumber}
-                      onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
-                      className="w-full border border-onyx/15 p-2 text-xs font-mono"
-                    />
+                  <div className="flex items-center gap-2 text-xs font-semibold text-onyx">
+                    <CreditCard size={16} className="text-gold" />
+                    <span>Stripe Luxury Card Processing</span>
+                    <span className="text-[9px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-medium">
+                      Pending Activation
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[9px] uppercase tracking-widest text-onyx/60 mb-1">Expires</label>
-                      <input 
-                        type="text"
-                        value={formData.cardExp}
-                        onChange={(e) => setFormData({ ...formData, cardExp: e.target.value })}
-                        className="w-full border border-onyx/15 p-2 text-xs font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] uppercase tracking-widest text-onyx/60 mb-1">Security CVC</label>
-                      <input 
-                        type="text"
-                        value={formData.cardCvc}
-                        onChange={(e) => setFormData({ ...formData, cardCvc: e.target.value })}
-                        className="w-full border border-onyx/15 p-2 text-xs font-mono"
-                      />
-                    </div>
+                  <p className="text-[11px] text-onyx/70 leading-relaxed">
+                    Card processing is pending live Stripe account approval. Raw card data is never collected in the browser for PCI compliance. 
+                    Submitting this form reserves your selected piece and prompts our Mayfair atelier concierge to issue a direct, encrypted payment link.
+                  </p>
+                </div>
+              )}
+
+              {/* Bank Wire */}
+              {formData.paymentMethod === 'Bank Wire' && (
+                <div className="p-4 bg-white border border-onyx/10 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-onyx">
+                    <Lock size={16} className="text-gold" />
+                    <span>Private Bank Wire (SWIFT / IBAN / RTGS)</span>
                   </div>
+                  <p className="text-[11px] text-onyx/70 leading-relaxed">
+                    Official pro-forma invoice and wire transfer details will be transmitted to your email. Our atelier reserves the piece upon submission and ships via insured armored courier upon funds clearance.
+                  </p>
+                </div>
+              )}
+
+              {/* Cash on Delivery */}
+              {formData.paymentMethod === 'Cash on Delivery' && (
+                <div className="p-4 bg-white border border-onyx/10 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-onyx">
+                    <Truck size={16} className="text-gold" />
+                    <span>Armored Courier Cash/Draft on Delivery</span>
+                  </div>
+                  <p className="text-[11px] text-onyx/70 leading-relaxed">
+                    Available for private client addresses across London, Paris, New York, and Mumbai. Settlement collected by licensed armed courier upon identity verification.
+                  </p>
                 </div>
               )}
             </div>
@@ -512,15 +544,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             {errorMessage && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded flex items-center justify-between">
                 <span>{errorMessage}</span>
-                {formData.paymentMethod === 'Razorpay' && (
-                  <button
-                    type="button"
-                    onClick={() => processOrderCompletion('Razorpay', `pay_fallback_${Date.now()}`)}
-                    className="ml-3 text-[10px] uppercase tracking-wider font-bold underline hover:text-red-900"
-                  >
-                    Complete via Sandbox
-                  </button>
-                )}
               </div>
             )}
 
