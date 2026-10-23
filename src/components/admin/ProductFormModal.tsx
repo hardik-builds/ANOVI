@@ -62,6 +62,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [collection, setCollection] = useState('');
   const [customCollection, setCustomCollection] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [gemType, setGemType] = useState<string>('');
   const [subCategory, setSubCategory] = useState('');
   const [gender, setGender] = useState<'Women' | 'Men' | 'Unisex'>('Women');
   const [isArchived, setIsArchived] = useState(false);
@@ -89,6 +90,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setName(initialProduct.name || '');
       setCollection(initialProduct.collection || '');
       setCategory(initialProduct.category || CATEGORIES[0]);
+      setGemType(initialProduct.gemType || (['Stones', 'Diamonds', 'Pearls'].includes(initialProduct.category as string) ? initialProduct.category as string : ''));
       setSubCategory(initialProduct.subCategory || '');
       setGender(initialProduct.gender || 'Women');
       setIsArchived(initialProduct.isArchived || false);
@@ -108,6 +110,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setName('');
       setCollection(collectionsList[0] || "L'Aurore");
       setCategory(CATEGORIES[0]);
+      setGemType('');
       setSubCategory('');
       setGender('Women');
       setIsArchived(false);
@@ -191,10 +194,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       formattedPrice = `$${formattedPrice}`;
     }
 
+    const finalGemType = gemType.trim() 
+      ? gemType.trim() 
+      : (['Stones', 'Diamonds', 'Pearls'].includes(category) ? category : undefined);
+
     const productPayload: Partial<JewelryItem> = {
       name: name.trim(),
       collection: finalCollection,
       category: category as any,
+      gemType: finalGemType as any,
       subCategory: subCategory.trim() ? subCategory as any : undefined,
       gender,
       price: formattedPrice,
@@ -278,7 +286,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-onyx/70">
                   Collection *
@@ -313,6 +321,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   onChange={(e) => {
                     const newCat = e.target.value;
                     setCategory(newCat);
+                    if (newCat === 'Stones' || newCat === 'Diamonds' || newCat === 'Pearls') {
+                      setGemType(newCat);
+                    }
                     const subs = SUB_CATEGORIES_BY_CAT[newCat];
                     if (subs && subs.length > 0) {
                       setSubCategory(subs[0]);
@@ -323,6 +334,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   {CATEGORIES.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-onyx/70">
+                  Material Pillar
+                </label>
+                <select
+                  value={gemType}
+                  onChange={(e) => setGemType(e.target.value)}
+                  className="w-full bg-white border border-onyx/15 px-4 py-2.5 text-xs focus:border-gold outline-none transition-colors"
+                >
+                  <option value="">Auto / Unspecified</option>
+                  <option value="Stones">Stones</option>
+                  <option value="Diamonds">Diamonds</option>
+                  <option value="Pearls">Pearls</option>
                 </select>
               </div>
 
@@ -339,7 +366,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   className="w-full bg-white border border-onyx/15 px-4 py-2.5 text-xs focus:border-gold outline-none transition-colors"
                 />
                 <datalist id="subcategories-datalist">
-                  {(SUB_CATEGORIES_BY_CAT[category] || ALL_SUB_CATEGORIES).map(sub => (
+                  {(SUB_CATEGORIES_BY_CAT[category] || SUB_CATEGORIES_BY_CAT[gemType] || ALL_SUB_CATEGORIES).map(sub => (
                     <option key={sub} value={sub} />
                   ))}
                 </datalist>

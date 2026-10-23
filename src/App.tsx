@@ -393,7 +393,7 @@ export default function App() {
     setActiveSubCategory('All');
   }, [activeCategory]);
 
-  const categories = ['All', 'Stones', 'Diamonds', 'Pearls'] as const;
+  const categories = ['All', 'Necklaces', 'Earrings', 'Rings', 'Bracelets', 'Stones', 'Diamonds', 'Pearls'] as const;
 
   const allCollections = useMemo(() => {
     const collections = new Set<string>();
@@ -435,7 +435,7 @@ export default function App() {
       if (selectedGender !== 'All' && item.gender && item.gender !== 'Unisex' && item.gender !== selectedGender) {
         return false;
       }
-      const matchesCategory = activeCategory === 'All' || item.category === activeCategory || item.collection === activeCategory;
+      const matchesCategory = activeCategory === 'All' || item.category === activeCategory || item.gemType === activeCategory || item.collection === activeCategory;
       const matchesSubCategory = activeSubCategory === 'All' || item.subCategory === activeSubCategory;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            item.collection.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -564,17 +564,44 @@ export default function App() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 8 }}
                           transition={{ duration: 0.2 }}
-                          className={`absolute top-full left-0 mt-3 p-6 min-w-[280px] z-[100] shadow-2xl backdrop-blur-xl border ${
+                          className={`absolute top-full left-0 mt-3 p-6 min-w-[320px] z-[100] shadow-2xl backdrop-blur-xl border ${
                             isDarkNav 
                               ? 'bg-[#111113]/98 border-white/10 text-white' 
                               : 'bg-white/98 border-onyx/10 text-onyx'
                           }`}
                         >
-                          <div className="flex flex-col gap-5">
+                          <div className="flex flex-col gap-4">
+                            {/* The Classic Categories (Preserved!) */}
+                            <div className="space-y-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1 opacity-90">Categories</p>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-2">
+                                {['Necklaces', 'Earrings', 'Rings', 'Bracelets'].map((cat) => (
+                                  <button
+                                    key={cat}
+                                    onClick={() => {
+                                      setActiveCategory(cat);
+                                      setActiveSubCategory('All');
+                                      handleNavigate('collections');
+                                      setIsCollectionsDropdownOpen(false);
+                                    }}
+                                    className={`text-left text-[9px] uppercase tracking-[0.2em] font-medium transition-all hover:translate-x-1 duration-300 ${
+                                      activeCategory === cat 
+                                        ? 'text-gold font-semibold' 
+                                        : isDarkNav ? 'text-white/60 hover:text-white' : 'text-onyx/60 hover:text-onyx'
+                                    }`}
+                                  >
+                                    {cat}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className={`h-[1px] ${isDarkNav ? 'bg-white/10' : 'bg-onyx/5'}`} />
+
                             {/* Category 1: Stones */}
                             <div className="space-y-2">
-                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">1. Stones</p>
-                              <div className="grid grid-cols-1 gap-2 pl-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1 opacity-90">1. Stones</p>
+                              <div className="grid grid-cols-1 gap-1.5 pl-2">
                                 {['Gemstones', 'Labgrown', 'Semi precious'].map((sub) => (
                                   <button
                                     key={sub}
@@ -600,8 +627,8 @@ export default function App() {
 
                             {/* Category 2: Diamonds */}
                             <div className="space-y-2">
-                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">2. Diamonds</p>
-                              <div className="grid grid-cols-1 gap-2 pl-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1 opacity-90">2. Diamonds</p>
+                              <div className="grid grid-cols-1 gap-1.5 pl-2">
                                 {['Natural', 'Labgrown', 'Zircon'].map((sub) => (
                                   <button
                                     key={sub}
@@ -627,7 +654,7 @@ export default function App() {
 
                             {/* Gender Filter Selection */}
                             <div className="space-y-2">
-                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">Curated For</p>
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1 opacity-90">Curated For</p>
                               <div className="flex gap-2 pl-2">
                                 {(['Women', 'Men'] as const).map((gender) => (
                                   <button
@@ -943,6 +970,26 @@ export default function App() {
                   <span className="text-xs uppercase tracking-widest text-gold font-sans font-normal opacity-80">Explore All</span>
                 </button>
                 <div className="flex flex-col gap-3 ml-3 font-sans text-xs uppercase tracking-widest text-onyx/80">
+                  {/* Classic Categories */}
+                  <div className="flex flex-col gap-1.5 border-l border-gold/30 pl-3">
+                    <span className="text-[9px] text-gold font-bold tracking-[0.25em]">Jewelry Types</span>
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      {['Necklaces', 'Earrings', 'Rings', 'Bracelets'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => {
+                            setActiveCategory(cat);
+                            setActiveSubCategory('All');
+                            handleNavigate('collections');
+                          }}
+                          className="px-2.5 py-1 bg-onyx/5 hover:bg-gold hover:text-white rounded-full transition-all"
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-1.5 border-l border-gold/30 pl-3">
                     <span className="text-[9px] text-gold font-bold tracking-[0.25em]">1. Stones</span>
                     <div className="flex flex-wrap gap-2 text-[10px]">

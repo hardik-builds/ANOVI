@@ -1,6 +1,6 @@
 -- =====================================================================
 -- ANOVI Haute Joaillerie — Complete E-Commerce Database Schema
--- Version: 2.0.0 (Luxury Pillar & Dynamic Archive Release)
+-- Version: 2.1.0 (Luxury Pillar & Dynamic Archive Release)
 -- Target: PostgreSQL / Supabase
 -- =====================================================================
 
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS products (
   sku VARCHAR(64) UNIQUE,
   collection VARCHAR(100) NOT NULL,
   category VARCHAR(100) NOT NULL,
+  gem_type VARCHAR(50),
   sub_category VARCHAR(100),
   gender VARCHAR(20) DEFAULT 'Women',
   price NUMERIC(12, 2) NOT NULL,
@@ -45,12 +46,13 @@ CREATE TABLE IF NOT EXISTS products (
   featured BOOLEAN DEFAULT FALSE,
   is_archived BOOLEAN DEFAULT FALSE,
   archive_story TEXT,
-  status VARCHAR(30) DEFAULT 'active', -- 'active', 'archived', 'draft'
+  status VARCHAR(30) DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_gem_type ON products(gem_type);
 CREATE INDEX IF NOT EXISTS idx_products_sub_category ON products(sub_category);
 CREATE INDEX IF NOT EXISTS idx_products_gender ON products(gender);
 CREATE INDEX IF NOT EXISTS idx_products_collection ON products(collection);
@@ -150,6 +152,7 @@ CREATE TABLE IF NOT EXISTS archive_items (
   name VARCHAR(255) NOT NULL,
   collection VARCHAR(100) NOT NULL,
   category VARCHAR(100) NOT NULL,
+  gem_type VARCHAR(50),
   sub_category VARCHAR(100),
   gender VARCHAR(20) DEFAULT 'Women',
   price VARCHAR(100),
@@ -158,6 +161,10 @@ CREATE TABLE IF NOT EXISTS archive_items (
   archive_story TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_archive_items_category ON archive_items(category);
+CREATE INDEX IF NOT EXISTS idx_archive_items_gem_type ON archive_items(gem_type);
+CREATE INDEX IF NOT EXISTS idx_archive_items_sub_category ON archive_items(sub_category);
 
 -- 9. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
@@ -204,18 +211,23 @@ CREATE POLICY "Public Access to Product Images"
 -- 10. SEED DATA (INITIAL HAUTE JOAILLERIE CATALOG)
 -- =====================================================================
 INSERT INTO categories (name, slug, description, display_order) VALUES
-  ('Stones', 'stones', 'Precious gemstones, labgrown minerals and semi-precious masterworks', 1),
-  ('Diamonds', 'diamonds', 'Natural brilliance, cultivated labgrown solitaires and refractive zircon cuts', 2),
-  ('Pearls', 'pearls', 'Imperial South-Sea, Japanese-Akoya, Tahitian and fresh water cultured pearls', 3)
+  ('Necklaces', 'necklaces', 'Iconic high jewelry necklaces and chokers', 1),
+  ('Earrings', 'earrings', 'Ear drops, solitaires, chandeliers and statement ear clips', 2),
+  ('Rings', 'rings', 'Haute joaillerie solitaires, cocktail rings and bands', 3),
+  ('Bracelets', 'bracelets', 'Articulated cuffs, bangles and tennis bracelets', 4),
+  ('Stones', 'stones', 'Precious gemstones, labgrown minerals and semi-precious masterworks', 5),
+  ('Diamonds', 'diamonds', 'Natural brilliance, cultivated labgrown solitaires and refractive zircon cuts', 6),
+  ('Pearls', 'pearls', 'Imperial South-Sea, Japanese-Akoya, Tahitian and fresh water cultured pearls', 7)
 ON CONFLICT (name) DO UPDATE SET 
   description = EXCLUDED.description,
   display_order = EXCLUDED.display_order;
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'sov-1',
   'The Emerald Sovereign Pearl Collar',
   'Sovereign',
+  'Necklaces',
   'Pearls',
   'South-Sea',
   'Women',
@@ -236,6 +248,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -248,11 +261,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '1',
   'Ethereal Pearl Drops',
   'L''Aurore',
+  'Earrings',
   'Pearls',
   'South-Sea',
   'Women',
@@ -273,6 +287,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -285,11 +300,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '9',
   'Akoya Moonlight Studs',
   'L''Aurore',
+  'Earrings',
   'Pearls',
   'Japanese-Akoya',
   'Women',
@@ -310,6 +326,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -322,11 +339,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '10',
   'Tahitian Night Pendant',
   'Nocturne',
+  'Necklaces',
   'Pearls',
   'Tahitian',
   'Women',
@@ -347,6 +365,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -359,11 +378,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '11',
   'Fresh Water Blossom Necklace',
   'Heritage',
+  'Necklaces',
   'Pearls',
   'Fresh Water Pearls',
   'Women',
@@ -384,6 +404,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -396,11 +417,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'snw-3',
   'Étoile Polaire Diamond Snowflakes',
   'Lumière',
+  'Earrings',
   'Diamonds',
   'Natural',
   'Women',
@@ -421,6 +443,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -433,11 +456,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'byz-5',
   'Aurelia Byzantine Filigree Cuff',
   'Heritage',
+  'Bracelets',
   'Diamonds',
   'Natural',
   'Women',
@@ -458,6 +482,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -470,11 +495,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '5',
   'Lumière Diamond Choker',
   'Lumière',
+  'Necklaces',
   'Diamonds',
   'Natural',
   'Women',
@@ -495,6 +521,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -507,11 +534,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '3',
   'Solstice Diamond Solitaire',
   'Lumière',
+  'Rings',
   'Diamonds',
   'Natural',
   'Women',
@@ -532,6 +560,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -544,11 +573,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '8',
   'Infinity Diamond Cuff',
   'Nocturne',
+  'Bracelets',
   'Diamonds',
   'Natural',
   'Women',
@@ -569,6 +599,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -581,11 +612,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '15',
   'Silver Link Chain',
   'Heritage',
+  'Necklaces',
   'Diamonds',
   'Natural',
   'Men',
@@ -606,6 +638,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -618,11 +651,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '12',
   'Sterling Silver Ribbed Bangle',
   'Heritage',
+  'Bracelets',
   'Diamonds',
   'Natural',
   'Men',
@@ -643,6 +677,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -655,11 +690,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'ovl-4',
   'Lumière Oval Diamond Solitaires',
   'Lumière',
+  'Earrings',
   'Diamonds',
   'Labgrown',
   'Women',
@@ -680,6 +716,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -692,11 +729,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '19',
   'Glimmering Tennis Bracelet',
   'Lumière',
+  'Bracelets',
   'Diamonds',
   'Labgrown',
   'Women',
@@ -717,6 +755,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -729,18 +768,19 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '16',
   'Starlight Brilliance Studs',
   'Lumière',
+  'Earrings',
   'Diamonds',
   'Zircon',
   'Women',
   1200,
   'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=800',
   ARRAY['https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&q=80&w=1200'],
-  'Brilliant-cut zircon stones set in 18k white gold, radiating a celestial celestial fire.',
+  'Brilliant-cut zircon stones set in 18k white gold, radiating a celestial fire.',
   '18k White Gold, Brilliant-Cut High-Refractive Zircon',
   25,
   ARRAY['High-dispersion optical brilliance','18k white gold posts','Elegant minimalist design','Handcrafted in our London atelier'],
@@ -754,6 +794,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -766,11 +807,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '18',
   'Radiant Halo Necklace',
   'Lumière',
+  'Necklaces',
   'Diamonds',
   'Zircon',
   'Women',
@@ -791,6 +833,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -803,11 +846,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '13',
   'Lunar Silver Drops',
   'Heritage',
+  'Earrings',
   'Diamonds',
   'Zircon',
   'Women',
@@ -828,6 +872,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -840,11 +885,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '6',
   'Seraphina Emerald Pendant',
   'L''Aurore',
+  'Necklaces',
   'Stones',
   'Gemstones',
   'Women',
@@ -865,6 +911,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -877,11 +924,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '7',
   'Eternal Ruby Band',
   'Heritage',
+  'Rings',
   'Stones',
   'Gemstones',
   'Women',
@@ -902,6 +950,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -914,11 +963,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '2',
   'Celestial Sapphire Hoops',
   'Nocturne',
+  'Earrings',
   'Stones',
   'Gemstones',
   'Women',
@@ -939,6 +989,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -951,11 +1002,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '17',
   'The Azure Singularity',
   'One-of-a-Kind',
+  'Rings',
   'Stones',
   'Gemstones',
   'Women',
@@ -976,6 +1028,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -988,11 +1041,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'lab-1',
   'L''Aurore Labgrown Paraiba Ring',
   'L''Aurore',
+  'Rings',
   'Stones',
   'Labgrown',
   'Women',
@@ -1013,6 +1067,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1025,11 +1080,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   'fnd-2',
   'Foundation Crimson Radiance Demi-Parure',
   'Heritage',
+  'Necklaces',
   'Stones',
   'Semi precious',
   'Women',
@@ -1050,6 +1106,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1062,11 +1119,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '4',
   'Aurelia Gold Cascades',
   'Heritage',
+  'Earrings',
   'Stones',
   'Semi precious',
   'Women',
@@ -1087,6 +1145,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1099,11 +1158,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO products (id, name, collection, category, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
+INSERT INTO products (id, name, collection, category, gem_type, sub_category, gender, price, image, images, description, materials, shipping_cost, details, in_stock, stock_count, featured, is_archived, status)
 VALUES (
   '14',
   'Silver Serpent Ring',
   'Nocturne',
+  'Rings',
   'Stones',
   'Semi precious',
   'Men',
@@ -1124,6 +1184,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1136,11 +1197,12 @@ ON CONFLICT (id) DO UPDATE SET
   is_archived = EXCLUDED.is_archived,
   updated_at = NOW();
 
-INSERT INTO archive_items (id, name, collection, category, sub_category, gender, price, image, description, archive_story)
+INSERT INTO archive_items (id, name, collection, category, gem_type, sub_category, gender, price, image, description, archive_story)
 VALUES (
   'a1',
   'Vintage Rose Quartz Amulet',
   'Heritage Archive',
+  'Necklaces',
   'Stones',
   'Semi precious',
   'Women',
@@ -1153,6 +1215,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1160,11 +1223,12 @@ ON CONFLICT (id) DO UPDATE SET
   description = EXCLUDED.description,
   archive_story = EXCLUDED.archive_story;
 
-INSERT INTO archive_items (id, name, collection, category, sub_category, gender, price, image, description, archive_story)
+INSERT INTO archive_items (id, name, collection, category, gem_type, sub_category, gender, price, image, description, archive_story)
 VALUES (
   'a2',
   'Midnight Onyx Signet',
   'Nocturne Archive',
+  'Rings',
   'Stones',
   'Semi precious',
   'Men',
@@ -1177,6 +1241,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1184,11 +1249,12 @@ ON CONFLICT (id) DO UPDATE SET
   description = EXCLUDED.description,
   archive_story = EXCLUDED.archive_story;
 
-INSERT INTO archive_items (id, name, collection, category, sub_category, gender, price, image, description, archive_story)
+INSERT INTO archive_items (id, name, collection, category, gem_type, sub_category, gender, price, image, description, archive_story)
 VALUES (
   'a3',
   'Starlight Silver Bangle',
   'Lumière Archive',
+  'Bracelets',
   'Diamonds',
   'Zircon',
   'Women',
@@ -1201,6 +1267,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,
@@ -1208,11 +1275,12 @@ ON CONFLICT (id) DO UPDATE SET
   description = EXCLUDED.description,
   archive_story = EXCLUDED.archive_story;
 
-INSERT INTO archive_items (id, name, collection, category, sub_category, gender, price, image, description, archive_story)
+INSERT INTO archive_items (id, name, collection, category, gem_type, sub_category, gender, price, image, description, archive_story)
 VALUES (
   'a4',
   'Gilded Leaf Ear-Climbers',
   'Heritage Archive',
+  'Earrings',
   'Stones',
   'Semi precious',
   'Women',
@@ -1225,6 +1293,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   collection = EXCLUDED.collection,
   category = EXCLUDED.category,
+  gem_type = EXCLUDED.gem_type,
   sub_category = EXCLUDED.sub_category,
   gender = EXCLUDED.gender,
   price = EXCLUDED.price,

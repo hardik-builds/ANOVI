@@ -11,7 +11,8 @@ export interface JewelryItem {
   name: string;
   collection: string;
   gender?: 'Women' | 'Men' | 'Unisex';
-  category: 'Stones' | 'Diamonds' | 'Pearls' | 'Earrings' | 'Necklaces' | 'Rings' | 'Bracelets' | string;
+  category: 'Necklaces' | 'Earrings' | 'Rings' | 'Bracelets' | 'Stones' | 'Diamonds' | 'Pearls' | string;
+  gemType?: 'Stones' | 'Diamonds' | 'Pearls' | string;
   subCategory?: 'Gemstones' | 'Labgrown' | 'Semi precious' | 'Natural' | 'Zircon' | 'South-Sea' | 'Japanese-Akoya' | 'Tahitian' | 'Fresh Water Pearls' | string;
   price: string;
   image: string;

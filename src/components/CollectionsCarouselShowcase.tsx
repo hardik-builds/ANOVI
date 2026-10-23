@@ -57,6 +57,9 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
 
   const isPearlsMode = activeCategory === 'Pearls';
 
+  // Categories list preserving old categories + newly added categories
+  const mainCategories = ['All', 'Necklaces', 'Earrings', 'Rings', 'Bracelets', 'Stones', 'Diamonds'] as const;
+
   // Subcategories mapping
   const stonesSubCategories = ['All Stones', 'Gemstones', 'Labgrown', 'Semi precious'] as const;
   const diamondsSubCategories = ['All Diamonds', 'Natural', 'Labgrown', 'Zircon'] as const;
@@ -73,8 +76,9 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
       }
 
       // 2. Pearls Dedicated Mode
-      if (isPearlsMode) {
-        if (item.category !== 'Pearls') return false;
+      if (isPearlsMode || activeCategory === 'Pearls') {
+        const matchesPearl = item.gemType === 'Pearls' || item.category === 'Pearls';
+        if (!matchesPearl) return false;
         if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Pearls') {
           const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
           const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
@@ -85,7 +89,8 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
 
       // 3. Stones Category
       if (activeCategory === 'Stones') {
-        if (item.category !== 'Stones') return false;
+        const matchesStone = item.gemType === 'Stones' || item.category === 'Stones';
+        if (!matchesStone) return false;
         if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Stones') {
           const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
           const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
@@ -96,7 +101,8 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
 
       // 4. Diamonds Category
       if (activeCategory === 'Diamonds') {
-        if (item.category !== 'Diamonds') return false;
+        const matchesDiamond = item.gemType === 'Diamonds' || item.category === 'Diamonds';
+        if (!matchesDiamond) return false;
         if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Diamonds') {
           const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
           const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
@@ -105,7 +111,7 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
         return true;
       }
 
-      // 5. Legacy categories (Necklaces, Earrings, Rings, Bracelets) if chosen
+      // 5. Classic Categories (Necklaces, Earrings, Rings, Bracelets) - Preserved
       if (['Necklaces', 'Earrings', 'Rings', 'Bracelets'].includes(activeCategory)) {
         const catLower = activeCategory.toLowerCase();
         const itemCat = (item.category || '').toLowerCase();
@@ -295,16 +301,16 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
                 );
               })
             ) : (
-              ['All Collections', 'Stones', 'Diamonds'].map((catKey) => {
-                const isSelected = (catKey === 'All Collections' && (activeCategory === 'All' || activeCategory === 'All Collections')) || activeCategory === catKey;
+              mainCategories.map((catKey) => {
+                const isSelected = (catKey === 'All' && (activeCategory === 'All' || activeCategory === 'All Collections')) || activeCategory === catKey;
                 return (
                   <button
                     key={catKey}
                     onClick={() => {
-                      onSelectCategory(catKey === 'All Collections' ? 'All' : catKey);
+                      onSelectCategory(catKey);
                       onSelectSubCategory('All');
                     }}
-                    className={`relative py-1 text-[10px] md:text-xs uppercase tracking-[0.25em] transition-all duration-300 ${
+                    className={`relative py-1 text-[10px] md:text-xs uppercase tracking-[0.22em] transition-all duration-300 ${
                       isSelected ? 'text-white font-medium' : 'text-white/40 hover:text-white/80'
                     }`}
                   >
