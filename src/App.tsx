@@ -5,7 +5,7 @@ import { JEWELRY_ITEMS, ARCHIVE_ITEMS, BESPOKE_ITEMS } from './constants';
 import { BespokeItem, JewelryItem, Review, WebsiteSettings, Order } from './types';
 import { Logo } from './components/Logo';
 import { Twitter, Mail, Calendar, Clock, MessageSquare } from 'lucide-react';
-import { storeService } from './services/storeService';
+import { storeService, getSupabaseClient } from './services/storeService';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ProductDetailCinematic } from './components/ProductDetailCinematic';
@@ -136,6 +136,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('All');
+  const [selectedGender, setSelectedGender] = useState<'All' | 'Women' | 'Men'>('All');
+  const [isPearlsDropdownOpen, setIsPearlsDropdownOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [currency, setCurrency] = useState<CurrencyCode>('INR');
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
@@ -143,6 +145,7 @@ export default function App() {
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
 
   const [products, setProducts] = useState<JewelryItem[]>(() => storeService.getProducts());
+  const [archiveItems, setArchiveItems] = useState<JewelryItem[]>(() => storeService.getArchiveItems());
   const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings>(() => storeService.getWebsiteSettings());
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
@@ -231,18 +234,51 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Attempt backend sync for fresh catalog updates from Supabase/Server
-    fetch('/api/products')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && Array.isArray(data) && data.length > 0) {
-          setProducts(data);
-          storeService.saveProducts(data);
+    let isMounted = true;
+    const syncData = async () => {
+      try {
+        const liveProducts = await storeService.fetchProducts();
+        if (isMounted && liveProducts && liveProducts.length > 0) {
+          setProducts(liveProducts);
         }
-      })
-      .catch(() => {
-        // Silently preserve local store when running standalone or offline
-      });
+      } catch (e) {
+        console.warn('Live products sync notice:', e);
+      }
+      try {
+        const liveArchive = await storeService.fetchArchiveItems();
+        if (isMounted && liveArchive && liveArchive.length > 0) {
+          setArchiveItems(liveArchive);
+        }
+      } catch (e) {
+        console.warn('Live archive sync notice:', e);
+      }
+    };
+    syncData();
+
+    // Supabase Real-Time Subscriptions for Products & Archive
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const channel = supabase
+        .channel('public:realtime_store')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async () => {
+          const updated = await storeService.fetchProducts();
+          if (isMounted) setProducts(updated);
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'archive_items' }, async () => {
+          const updated = await storeService.fetchArchiveItems();
+          if (isMounted) setArchiveItems(updated);
+        })
+        .subscribe();
+
+      return () => {
+        isMounted = false;
+        supabase.removeChannel(channel);
+      };
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleNavigate = (newView: 'home' | 'collections' | 'archive' | 'product' | 'bespoke' | 'admin') => {
@@ -357,7 +393,7 @@ export default function App() {
     setActiveSubCategory('All');
   }, [activeCategory]);
 
-  const categories = ['All', 'Necklaces', 'Earrings', 'Rings', 'Bracelets'] as const;
+  const categories = ['All', 'Stones', 'Diamonds', 'Pearls'] as const;
 
   const allCollections = useMemo(() => {
     const collections = new Set<string>();
@@ -375,17 +411,39 @@ export default function App() {
     return Array.from(materials).sort();
   }, [products]);
 
+  const dynamicArchiveItems = useMemo(() => {
+    const baseArchive = archiveItems && archiveItems.length > 0 ? archiveItems : ARCHIVE_ITEMS;
+    const outOfStockOrArchived = products.filter(p => p.inStock === false || p.isArchived === true);
+
+    const map = new Map<string, JewelryItem>();
+    baseArchive.forEach(item => map.set(item.id, item));
+    outOfStockOrArchived.forEach(item => {
+      if (!map.has(item.id)) {
+        map.set(item.id, {
+          ...item,
+          price: item.price?.includes('Original') || item.price?.includes('Archived') ? item.price : `${item.price} (Archived)`,
+          description: item.archiveStory || item.description
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [archiveItems, products]);
+
   const filteredItems = useMemo(() => {
     return products.filter(item => {
+      if (selectedGender !== 'All' && item.gender && item.gender !== 'Unisex' && item.gender !== selectedGender) {
+        return false;
+      }
       const matchesCategory = activeCategory === 'All' || item.category === activeCategory || item.collection === activeCategory;
-      const matchesSubCategory = (activeCategory !== 'Pearls' && activeCategory !== 'Silver' && activeCategory !== 'Radiance') || 
-                                 activeSubCategory === 'All' || 
-                                 item.subCategory === activeSubCategory;
+      const matchesSubCategory = activeSubCategory === 'All' || item.subCategory === activeSubCategory;
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                            item.collection.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.description.toLowerCase().includes(searchQuery.toLowerCase());
+                           item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                           (item.subCategory && item.subCategory.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const itemPrice = parseInt(item.price.replace(/[^0-9]/g, ''));
+      const itemPrice = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
       const matchesPrice = itemPrice >= priceRange[0] && itemPrice <= priceRange[1];
       
       const matchesMaterials = selectedMaterials.length === 0 || 
@@ -393,7 +451,7 @@ export default function App() {
 
       return matchesCategory && matchesSubCategory && matchesSearch && matchesPrice && matchesMaterials;
     });
-  }, [activeCategory, activeSubCategory, searchQuery, products, priceRange, selectedMaterials]);
+  }, [activeCategory, activeSubCategory, selectedGender, searchQuery, products, priceRange, selectedMaterials]);
 
   const handleAddReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -489,8 +547,12 @@ export default function App() {
                     onMouseLeave={() => setIsCollectionsDropdownOpen(false)}
                   >
                     <button 
-                      onClick={() => handleNavigate('collections')} 
-                      className="nav-underline flex items-center gap-1.5"
+                      onClick={() => {
+                        setActiveCategory('All');
+                        setActiveSubCategory('All');
+                        handleNavigate('collections');
+                      }} 
+                      className={`nav-underline flex items-center gap-1.5 ${view === 'collections' && activeCategory !== 'Pearls' ? 'text-gold' : ''}`}
                     >
                       Collections <ChevronDown size={10} className={`transition-transform duration-300 ${isCollectionsDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
@@ -502,59 +564,163 @@ export default function App() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 8 }}
                           transition={{ duration: 0.2 }}
-                          className={`absolute top-full left-0 mt-3 p-6 min-w-[240px] z-[100] shadow-2xl backdrop-blur-xl border ${
+                          className={`absolute top-full left-0 mt-3 p-6 min-w-[280px] z-[100] shadow-2xl backdrop-blur-xl border ${
                             isDarkNav 
                               ? 'bg-[#111113]/98 border-white/10 text-white' 
                               : 'bg-white/98 border-onyx/10 text-onyx'
                           }`}
                         >
-                          <div className="flex flex-col gap-6">
-                            <div className="space-y-3">
-                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-3 opacity-70">Categories</p>
-                              <div className="grid grid-cols-1 gap-2.5">
-                                {categories.map((category) => (
+                          <div className="flex flex-col gap-5">
+                            {/* Category 1: Stones */}
+                            <div className="space-y-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">1. Stones</p>
+                              <div className="grid grid-cols-1 gap-2 pl-2">
+                                {['Gemstones', 'Labgrown', 'Semi precious'].map((sub) => (
                                   <button
-                                    key={category}
+                                    key={sub}
                                     onClick={() => {
-                                      setActiveCategory(category);
+                                      setActiveCategory('Stones');
+                                      setActiveSubCategory(sub);
                                       handleNavigate('collections');
                                       setIsCollectionsDropdownOpen(false);
                                     }}
                                     className={`text-left text-[9px] uppercase tracking-[0.2em] font-medium transition-all hover:translate-x-1 duration-300 ${
-                                      activeCategory === category 
+                                      activeCategory === 'Stones' && activeSubCategory === sub 
                                         ? 'text-gold font-semibold' 
                                         : isDarkNav ? 'text-white/60 hover:text-white' : 'text-onyx/60 hover:text-onyx'
                                     }`}
                                   >
-                                    {category}
+                                    {sub}
                                   </button>
                                 ))}
                               </div>
                             </div>
                             
                             <div className={`h-[1px] ${isDarkNav ? 'bg-white/10' : 'bg-onyx/5'}`} />
-                            
-                            <div className="space-y-3">
-                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-3 opacity-70">Named Collections</p>
-                              <div className="grid grid-cols-1 gap-2.5">
-                                {allCollections.map((collection) => (
+
+                            {/* Category 2: Diamonds */}
+                            <div className="space-y-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">2. Diamonds</p>
+                              <div className="grid grid-cols-1 gap-2 pl-2">
+                                {['Natural', 'Labgrown', 'Zircon'].map((sub) => (
                                   <button
-                                    key={collection}
+                                    key={sub}
                                     onClick={() => {
-                                      setActiveCategory(collection);
+                                      setActiveCategory('Diamonds');
+                                      setActiveSubCategory(sub);
                                       handleNavigate('collections');
                                       setIsCollectionsDropdownOpen(false);
                                     }}
                                     className={`text-left text-[9px] uppercase tracking-[0.2em] font-medium transition-all hover:translate-x-1 duration-300 ${
-                                      activeCategory === collection 
+                                      activeCategory === 'Diamonds' && activeSubCategory === sub 
                                         ? 'text-gold font-semibold' 
                                         : isDarkNav ? 'text-white/60 hover:text-white' : 'text-onyx/60 hover:text-onyx'
                                     }`}
                                   >
-                                    {collection}
+                                    {sub}
                                   </button>
                                 ))}
                               </div>
+                            </div>
+
+                            <div className={`h-[1px] ${isDarkNav ? 'bg-white/10' : 'bg-onyx/5'}`} />
+
+                            {/* Gender Filter Selection */}
+                            <div className="space-y-2">
+                              <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-1.5 opacity-90">Curated For</p>
+                              <div className="flex gap-2 pl-2">
+                                {(['Women', 'Men'] as const).map((gender) => (
+                                  <button
+                                    key={gender}
+                                    onClick={() => {
+                                      setSelectedGender(gender);
+                                      setActiveCategory('All');
+                                      handleNavigate('collections');
+                                      setIsCollectionsDropdownOpen(false);
+                                    }}
+                                    className={`text-[9px] uppercase tracking-[0.2em] px-3 py-1 border transition-all duration-300 ${
+                                      selectedGender === gender
+                                        ? 'border-gold text-gold bg-gold/10'
+                                        : isDarkNav ? 'border-white/20 text-white/60 hover:text-white' : 'border-onyx/20 text-onyx/60 hover:text-onyx'
+                                    }`}
+                                  >
+                                    {gender}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className={`h-[1px] ${isDarkNav ? 'bg-white/10' : 'bg-onyx/5'}`} />
+
+                            <button
+                              onClick={() => {
+                                setActiveCategory('All');
+                                setActiveSubCategory('All');
+                                setSelectedGender('All');
+                                handleNavigate('collections');
+                                setIsCollectionsDropdownOpen(false);
+                              }}
+                              className="text-left text-[8px] uppercase tracking-[0.25em] text-gold/80 hover:text-gold font-semibold pt-1"
+                            >
+                              View All Collections →
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Category 3: PEARLS — Dedicated Tab in Navbar (NOT in Collections) */}
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsPearlsDropdownOpen(true)}
+                    onMouseLeave={() => setIsPearlsDropdownOpen(false)}
+                  >
+                    <button 
+                      onClick={() => {
+                        setActiveCategory('Pearls');
+                        setActiveSubCategory('All');
+                        handleNavigate('collections');
+                      }} 
+                      className={`nav-underline flex items-center gap-1.5 ${view === 'collections' && activeCategory === 'Pearls' ? 'text-gold font-semibold' : ''}`}
+                    >
+                      Pearls <ChevronDown size={10} className={`transition-transform duration-300 ${isPearlsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {isPearlsDropdownOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 8 }}
+                          transition={{ duration: 0.2 }}
+                          className={`absolute top-full left-0 mt-3 p-6 min-w-[260px] z-[100] shadow-2xl backdrop-blur-xl border ${
+                            isDarkNav 
+                              ? 'bg-[#111113]/98 border-white/10 text-white' 
+                              : 'bg-white/98 border-onyx/10 text-onyx'
+                          }`}
+                        >
+                          <div className="space-y-3">
+                            <p className="text-[8px] uppercase tracking-[0.3em] text-gold font-bold mb-3 opacity-90">The Pearl Atelier</p>
+                            <div className="grid grid-cols-1 gap-2.5">
+                              {['All Pearls', 'South-Sea', 'Japanese-Akoya', 'Tahitian', 'Fresh Water Pearls'].map((sub) => (
+                                <button
+                                  key={sub}
+                                  onClick={() => {
+                                    setActiveCategory('Pearls');
+                                    setActiveSubCategory(sub === 'All Pearls' ? 'All' : sub);
+                                    handleNavigate('collections');
+                                    setIsPearlsDropdownOpen(false);
+                                  }}
+                                  className={`text-left text-[9px] uppercase tracking-[0.2em] font-medium transition-all hover:translate-x-1 duration-300 ${
+                                    activeCategory === 'Pearls' && ((sub === 'All Pearls' && activeSubCategory === 'All') || activeSubCategory === sub)
+                                      ? 'text-gold font-semibold' 
+                                      : isDarkNav ? 'text-white/60 hover:text-white' : 'text-onyx/60 hover:text-onyx'
+                                  }`}
+                                >
+                                  {sub}
+                                </button>
+                              ))}
                             </div>
                           </div>
                         </motion.div>
@@ -762,20 +928,109 @@ export default function App() {
             </div>
             <div className="flex flex-col gap-8 mt-12 text-4xl font-serif italic overflow-y-auto no-scrollbar pb-12 text-gold">
               <button className="text-left" onClick={() => handleNavigate('home')}>Home</button>
-              <div className="flex flex-col gap-6">
-                <button className="text-left" onClick={() => handleNavigate('collections')}>Collections</button>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 ml-4">
-                  {categories.map(cat => (
-                    <button 
-                      key={cat} 
-                      onClick={() => { setActiveCategory(cat); handleNavigate('collections'); }}
-                      className="text-left text-sm font-sans uppercase tracking-widest opacity-70 hover:opacity-100 transition-opacity py-1"
+              
+              {/* Collections Menu */}
+              <div className="flex flex-col gap-4">
+                <button 
+                  className="text-left flex items-center justify-between" 
+                  onClick={() => {
+                    setActiveCategory('All');
+                    setActiveSubCategory('All');
+                    handleNavigate('collections');
+                  }}
+                >
+                  <span>Collections</span>
+                  <span className="text-xs uppercase tracking-widest text-gold font-sans font-normal opacity-80">Explore All</span>
+                </button>
+                <div className="flex flex-col gap-3 ml-3 font-sans text-xs uppercase tracking-widest text-onyx/80">
+                  <div className="flex flex-col gap-1.5 border-l border-gold/30 pl-3">
+                    <span className="text-[9px] text-gold font-bold tracking-[0.25em]">1. Stones</span>
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      {['Gemstones', 'Labgrown', 'Semi precious'].map(sub => (
+                        <button
+                          key={sub}
+                          onClick={() => {
+                            setActiveCategory('Stones');
+                            setActiveSubCategory(sub);
+                            handleNavigate('collections');
+                          }}
+                          className="px-2.5 py-1 bg-onyx/5 hover:bg-gold hover:text-white rounded-full transition-all"
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 border-l border-gold/30 pl-3">
+                    <span className="text-[9px] text-gold font-bold tracking-[0.25em]">2. Diamonds</span>
+                    <div className="flex flex-wrap gap-2 text-[10px]">
+                      {['Natural', 'Labgrown', 'Zircon'].map(sub => (
+                        <button
+                          key={sub}
+                          onClick={() => {
+                            setActiveCategory('Diamonds');
+                            setActiveSubCategory(sub);
+                            handleNavigate('collections');
+                          }}
+                          className="px-2.5 py-1 bg-onyx/5 hover:bg-gold hover:text-white rounded-full transition-all"
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pl-3 pt-1">
+                    {(['Women', 'Men'] as const).map(gender => (
+                      <button
+                        key={gender}
+                        onClick={() => {
+                          setSelectedGender(gender);
+                          setActiveCategory('All');
+                          handleNavigate('collections');
+                        }}
+                        className={`text-[9px] uppercase tracking-widest px-3 py-1 rounded-full border transition-all ${
+                          selectedGender === gender ? 'border-gold text-gold bg-gold/10' : 'border-onyx/20 text-onyx/60'
+                        }`}
+                      >
+                        {gender}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pearls: Dedicated Tab (NOT inside Collections) */}
+              <div className="flex flex-col gap-3">
+                <button 
+                  className="text-left flex items-center justify-between" 
+                  onClick={() => {
+                    setActiveCategory('Pearls');
+                    setActiveSubCategory('All');
+                    handleNavigate('collections');
+                  }}
+                >
+                  <span>Pearls</span>
+                  <span className="text-xs uppercase tracking-widest text-gold font-sans font-normal opacity-80">The Pearl Atelier</span>
+                </button>
+                <div className="flex flex-wrap gap-2 ml-3 pl-3 border-l border-gold/30 font-sans text-[10px] uppercase tracking-widest text-onyx/80">
+                  {['South-Sea', 'Japanese-Akoya', 'Tahitian', 'Fresh Water Pearls'].map(sub => (
+                    <button
+                      key={sub}
+                      onClick={() => {
+                        setActiveCategory('Pearls');
+                        setActiveSubCategory(sub);
+                        handleNavigate('collections');
+                      }}
+                      className="px-2.5 py-1 bg-onyx/5 hover:bg-gold hover:text-white rounded-full transition-all"
                     >
-                      {cat}
+                      {sub}
                     </button>
                   ))}
                 </div>
               </div>
+
               <button className="text-left" onClick={() => handleNavigate('bespoke')}>Bespoke</button>
               <button className="text-left" onClick={() => handleNavigate('archive')}>Archive</button>
               <button className="text-left flex items-center gap-2" onClick={() => handleNavigate('admin')}>
@@ -1054,6 +1309,8 @@ export default function App() {
               onSelectCategory={setActiveCategory}
               activeSubCategory={activeSubCategory}
               onSelectSubCategory={setActiveSubCategory}
+              selectedGender={selectedGender}
+              onSelectGender={setSelectedGender}
               currency={currency}
               formatPrice={(p) => formatPriceUtil(p, currency)}
               onProductClick={handleProductClick}
@@ -1286,7 +1543,7 @@ export default function App() {
               </header>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px] md:auto-rows-[400px]">
-                {ARCHIVE_ITEMS.map((item, index) => {
+                {dynamicArchiveItems.map((item, index) => {
                   const spans = [
                     "md:col-span-2 md:row-span-2",
                     "md:col-span-1 md:row-span-1",
@@ -1323,9 +1580,16 @@ export default function App() {
                       </div>
 
                       {/* Bottom Info */}
-                      <div className="absolute bottom-8 left-8">
-                        <p className="text-[8px] uppercase tracking-[0.3em] text-gold mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">{item.collection}</p>
+                      <div className="absolute bottom-8 left-8 right-8">
+                        <p className="text-[8px] uppercase tracking-[0.3em] text-gold mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                          {item.collection} {item.price ? `• ${item.price}` : ''}
+                        </p>
                         <h4 className="text-2xl font-serif italic text-white">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-xs text-white/60 font-light mt-1 max-w-md opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-150 line-clamp-2">
+                            {item.description}
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   );

@@ -10,8 +10,9 @@ export interface JewelryItem {
   id: string;
   name: string;
   collection: string;
-  category: 'Earrings' | 'Necklaces' | 'Rings' | 'Bracelets' | 'Pearls' | 'Silver' | 'Radiance' | 'The Singularities' | string;
-  subCategory?: string;
+  gender?: 'Women' | 'Men' | 'Unisex';
+  category: 'Stones' | 'Diamonds' | 'Pearls' | 'Earrings' | 'Necklaces' | 'Rings' | 'Bracelets' | string;
+  subCategory?: 'Gemstones' | 'Labgrown' | 'Semi precious' | 'Natural' | 'Zircon' | 'South-Sea' | 'Japanese-Akoya' | 'Tahitian' | 'Fresh Water Pearls' | string;
   price: string;
   image: string;
   images?: string[];
@@ -24,6 +25,8 @@ export interface JewelryItem {
   inStock?: boolean;
   featured?: boolean;
   stockCount?: number;
+  isArchived?: boolean;
+  archiveStory?: string;
   createdAt?: string;
 }
 

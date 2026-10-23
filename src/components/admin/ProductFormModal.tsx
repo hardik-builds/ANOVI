@@ -11,27 +11,44 @@ interface ProductFormModalProps {
 }
 
 const CATEGORIES = [
-  'Earrings',
+  'Stones',
+  'Diamonds',
+  'Pearls',
   'Necklaces',
+  'Earrings',
   'Rings',
   'Bracelets',
-  'Pearls',
-  'Silver',
-  'Radiance',
   'The Singularities'
 ];
 
-const SUB_CATEGORIES = [
-  'Akoya',
+const SUB_CATEGORIES_BY_CAT: Record<string, string[]> = {
+  Stones: ['Gemstones', 'Labgrown', 'Semi precious'],
+  Diamonds: ['Natural', 'Labgrown', 'Zircon'],
+  Pearls: ['South-Sea', 'Japanese-Akoya', 'Tahitian', 'Fresh Water Pearls'],
+  Necklaces: ['Choker', 'Collar', 'Pendant', 'Opera Length'],
+  Earrings: ['Studs', 'Drops', 'Hoops', 'Ear Climbers'],
+  Rings: ['Solitaire', 'Eternity Band', 'Statement Ring', 'Signet'],
+  Bracelets: ['Bangle', 'Cuff', 'Tennis Bracelet', 'Chain']
+};
+
+const ALL_SUB_CATEGORIES = [
+  'Gemstones',
+  'Labgrown',
+  'Semi precious',
+  'Natural',
+  'Zircon',
+  'South-Sea',
+  'Japanese-Akoya',
   'Tahitian',
-  'Fresh Water',
-  'Necklaces',
-  'Bracelets',
-  'Earrings',
-  'Statement Ring',
-  'Solitaire',
+  'Fresh Water Pearls',
   'Choker',
-  'Pendant'
+  'Collar',
+  'Pendant',
+  'Solitaire',
+  'Studs',
+  'Drops',
+  'Bangle',
+  'Cuff'
 ];
 
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({
@@ -46,6 +63,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [customCollection, setCustomCollection] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [subCategory, setSubCategory] = useState('');
+  const [gender, setGender] = useState<'Women' | 'Men' | 'Unisex'>('Women');
+  const [isArchived, setIsArchived] = useState(false);
+  const [archiveStory, setArchiveStory] = useState('');
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
@@ -70,6 +90,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setCollection(initialProduct.collection || '');
       setCategory(initialProduct.category || CATEGORIES[0]);
       setSubCategory(initialProduct.subCategory || '');
+      setGender(initialProduct.gender || 'Women');
+      setIsArchived(initialProduct.isArchived || false);
+      setArchiveStory(initialProduct.archiveStory || '');
       setPrice(initialProduct.price || '');
       setImage(initialProduct.image || '');
       setAdditionalImages(initialProduct.images || []);
@@ -86,6 +109,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setCollection(collectionsList[0] || "L'Aurore");
       setCategory(CATEGORIES[0]);
       setSubCategory('');
+      setGender('Women');
+      setIsArchived(false);
+      setArchiveStory('');
       setPrice('$4,500');
       setImage('');
       setAdditionalImages([]);
@@ -170,6 +196,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       collection: finalCollection,
       category: category as any,
       subCategory: subCategory.trim() ? subCategory as any : undefined,
+      gender,
       price: formattedPrice,
       image: image.trim(),
       images: additionalImages.length > 0 ? additionalImages : [image.trim()],
@@ -181,6 +208,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       inStock,
       featured,
       stockCount: Number(stockCount) || 1,
+      isArchived,
+      archiveStory: archiveStory.trim() || undefined,
     };
 
     onSave(productPayload);
@@ -249,7 +278,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-onyx/70">
                   Collection *
@@ -281,7 +310,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => {
+                    const newCat = e.target.value;
+                    setCategory(newCat);
+                    const subs = SUB_CATEGORIES_BY_CAT[newCat];
+                    if (subs && subs.length > 0) {
+                      setSubCategory(subs[0]);
+                    }
+                  }}
                   className="w-full bg-white border border-onyx/15 px-4 py-2.5 text-xs focus:border-gold outline-none transition-colors"
                 >
                   {CATEGORIES.map(cat => (
@@ -292,21 +328,36 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
               <div>
                 <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-onyx/70">
-                  Sub-Category (Optional)
+                  Sub-Category
                 </label>
                 <input 
                   type="text"
                   list="subcategories-datalist"
-                  placeholder="e.g. Akoya or Earrings"
+                  placeholder="e.g. Gemstones or Natural"
                   value={subCategory}
                   onChange={(e) => setSubCategory(e.target.value)}
                   className="w-full bg-white border border-onyx/15 px-4 py-2.5 text-xs focus:border-gold outline-none transition-colors"
                 />
                 <datalist id="subcategories-datalist">
-                  {SUB_CATEGORIES.map(sub => (
+                  {(SUB_CATEGORIES_BY_CAT[category] || ALL_SUB_CATEGORIES).map(sub => (
                     <option key={sub} value={sub} />
                   ))}
                 </datalist>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest font-bold mb-2 text-onyx/70">
+                  Curated Gender
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as any)}
+                  className="w-full bg-white border border-onyx/15 px-4 py-2.5 text-xs focus:border-gold outline-none transition-colors"
+                >
+                  <option value="Women">Women</option>
+                  <option value="Men">Men</option>
+                  <option value="Unisex">Unisex</option>
+                </select>
               </div>
             </div>
           </div>
@@ -574,6 +625,29 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   />
                   <span className="text-xs font-medium text-gold font-bold">Feature in The Singularities Showcase</span>
                 </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    checked={isArchived}
+                    onChange={(e) => setIsArchived(e.target.checked)}
+                    className="w-4 h-4 accent-gold"
+                  />
+                  <span className="text-xs font-medium text-onyx">Mark as Archived / Out of Stock</span>
+                </label>
+                {isArchived && (
+                  <div className="mt-2">
+                    <label className="block text-[9px] uppercase tracking-widest font-bold mb-1 text-onyx/60">
+                      Archive Lore / Story
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Crafted in our Mayfair atelier for the 2024 gala..."
+                      value={archiveStory}
+                      onChange={(e) => setArchiveStory(e.target.value)}
+                      className="w-full bg-white border border-onyx/15 px-3 py-1.5 text-xs focus:border-gold outline-none"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

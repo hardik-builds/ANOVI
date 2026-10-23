@@ -3,8 +3,8 @@ import { JewelryItem, BespokeItem, Order, BespokeInquiry, WebsiteSettings, Integ
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'anovi_products_v4',
-  ARCHIVE: 'anovi_archive_v3',
+  PRODUCTS: 'anovi_products_v5',
+  ARCHIVE: 'anovi_archive_v4',
   ORDERS: 'anovi_orders_v2',
   INQUIRIES: 'anovi_inquiries_v2',
   SETTINGS: 'anovi_settings_v2',
@@ -199,6 +199,7 @@ export const storeService = {
             collection: item.collection,
             category: item.category,
             subCategory: item.sub_category,
+            gender: item.gender || 'Women',
             price: typeof item.price === 'number' ? `$${item.price.toLocaleString()}` : item.price,
             image: item.image,
             images: item.images || [item.image],
@@ -210,6 +211,8 @@ export const storeService = {
             inStock: item.in_stock,
             stockCount: item.stock_count,
             featured: item.featured,
+            isArchived: item.is_archived || false,
+            archiveStory: item.archive_story,
             createdAt: item.created_at,
           }));
           this.saveProducts(mapped);
@@ -236,6 +239,55 @@ export const storeService = {
     return this.getProducts();
   },
 
+  async fetchArchiveItems(): Promise<JewelryItem[]> {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('archive_items')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapped: JewelryItem[] = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            collection: item.collection,
+            category: item.category,
+            subCategory: item.sub_category,
+            gender: item.gender || 'Women',
+            price: item.price,
+            image: item.image,
+            description: item.description,
+            archiveStory: item.archive_story || item.description,
+            inStock: false,
+            isArchived: true,
+            createdAt: item.created_at,
+          }));
+          this.saveArchiveItems(mapped);
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch archive items error:', err);
+      }
+    }
+
+    try {
+      const response = await fetch('/api/archive');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          this.saveArchiveItems(data);
+          return data;
+        }
+      }
+    } catch {
+      // offline / standalone
+    }
+
+    return this.getArchiveItems();
+  },
+
   saveProducts(products: JewelryItem[]): void {
     try {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
@@ -255,6 +307,37 @@ export const storeService = {
     };
     const updated = [product, ...products];
     this.saveProducts(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const numericPrice = parseFloat(String(product.price).replace(/[^0-9.]/g, '')) || 0;
+      Promise.resolve(supabase.from('products').insert({
+        id: product.id,
+        name: product.name,
+        collection: product.collection,
+        category: product.category,
+        sub_category: product.subCategory || null,
+        gender: product.gender || 'Women',
+        price: numericPrice,
+        image: product.image,
+        images: product.images || [product.image],
+        description: product.description,
+        materials: product.materials || null,
+        details: product.details || [],
+        in_stock: product.inStock,
+        stock_count: product.stockCount,
+        featured: Boolean(product.featured),
+        is_archived: Boolean(product.isArchived),
+        archive_story: product.archiveStory || null,
+      })).catch((e: any) => console.warn('Supabase add product notice:', e));
+    }
+
+    fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product)
+    }).catch(() => {});
+
     return product;
   },
 
@@ -262,6 +345,31 @@ export const storeService = {
     const products = this.getProducts();
     const updated = products.map((item) => (item.id === id ? { ...item, ...updates } : item));
     this.saveProducts(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const dbUpdates: any = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.collection !== undefined) dbUpdates.collection = updates.collection;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.subCategory !== undefined) dbUpdates.sub_category = updates.subCategory;
+      if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
+      if (updates.inStock !== undefined) dbUpdates.in_stock = updates.inStock;
+      if (updates.isArchived !== undefined) dbUpdates.is_archived = updates.isArchived;
+      if (updates.archiveStory !== undefined) dbUpdates.archive_story = updates.archiveStory;
+      if (updates.price !== undefined) {
+        dbUpdates.price = parseFloat(String(updates.price).replace(/[^0-9.]/g, '')) || 0;
+      }
+      dbUpdates.updated_at = new Date().toISOString();
+      Promise.resolve(supabase.from('products').update(dbUpdates).eq('id', id)).catch((e: any) => console.warn('Supabase product sync notice:', e));
+    }
+
+    fetch(`/api/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    }).catch(() => {});
+
     return updated;
   },
 
@@ -269,6 +377,13 @@ export const storeService = {
     const products = this.getProducts();
     const updated = products.filter((item) => item.id !== id);
     this.saveProducts(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      Promise.resolve(supabase.from('products').delete().eq('id', id)).catch((e: any) => console.warn('Supabase delete notice:', e));
+    }
+    fetch(`/api/products/${id}`, { method: 'DELETE' }).catch(() => {});
+
     return updated;
   },
 
@@ -299,6 +414,29 @@ export const storeService = {
     };
     const updated = [item, ...items];
     this.saveArchiveItems(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      Promise.resolve(supabase.from('archive_items').insert({
+        id: item.id,
+        name: item.name,
+        collection: item.collection,
+        category: item.category,
+        sub_category: item.subCategory || null,
+        gender: item.gender || 'Women',
+        price: item.price,
+        image: item.image,
+        description: item.description,
+        archive_story: item.archiveStory || item.description,
+      })).catch((e: any) => console.warn('Supabase archive item notice:', e));
+    }
+
+    fetch('/api/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    }).catch(() => {});
+
     return item;
   },
 
@@ -306,6 +444,14 @@ export const storeService = {
     const items = this.getArchiveItems();
     const updated = items.filter(item => item.id !== id);
     this.saveArchiveItems(updated);
+
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      Promise.resolve(supabase.from('archive_items').delete().eq('id', id)).catch((e: any) => console.warn('Supabase delete archive notice:', e));
+    }
+
+    fetch(`/api/archive/${id}`, { method: 'DELETE' }).catch(() => {});
+
     return updated;
   },
 

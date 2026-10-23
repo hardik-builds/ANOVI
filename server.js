@@ -211,6 +211,7 @@ app.get('/api/products', async (_req, res) => {
           collection: item.collection,
           category: item.category,
           subCategory: item.sub_category,
+          gender: item.gender || 'Women',
           price: typeof item.price === 'number' ? `$${item.price.toLocaleString()}` : item.price,
           image: item.image,
           images: item.images || [item.image],
@@ -222,6 +223,8 @@ app.get('/api/products', async (_req, res) => {
           inStock: item.in_stock,
           stockCount: item.stock_count,
           featured: item.featured,
+          isArchived: item.is_archived || false,
+          archiveStory: item.archive_story,
           createdAt: item.created_at,
         }));
         return res.json(mapped);
@@ -253,6 +256,7 @@ app.get('/api/products/:id', async (req, res) => {
           collection: data.collection,
           category: data.category,
           subCategory: data.sub_category,
+          gender: data.gender || 'Women',
           price: typeof data.price === 'number' ? `$${data.price.toLocaleString()}` : data.price,
           image: data.image,
           images: data.images || [data.image],
@@ -264,6 +268,8 @@ app.get('/api/products/:id', async (req, res) => {
           inStock: data.in_stock,
           stockCount: data.stock_count,
           featured: data.featured,
+          isArchived: data.is_archived || false,
+          archiveStory: data.archive_story,
           createdAt: data.created_at,
         });
       }
@@ -306,6 +312,7 @@ app.post('/api/products', async (req, res) => {
       collection: newProduct.collection || 'High Jewelry',
       category: newProduct.category || 'Jewelry',
       sub_category: newProduct.subCategory || null,
+      gender: newProduct.gender || 'Women',
       price: numericPrice,
       image: newProduct.image,
       images: newProduct.images || [newProduct.image],
@@ -315,6 +322,8 @@ app.post('/api/products', async (req, res) => {
       in_stock: newProduct.inStock,
       stock_count: newProduct.stockCount,
       featured: Boolean(newProduct.featured),
+      is_archived: Boolean(newProduct.isArchived),
+      archive_story: newProduct.archiveStory || null,
     }).catch(e => console.warn('Supabase product insert error:', e.message));
   }
 
@@ -345,6 +354,8 @@ app.put('/api/products/:id', (req, res) => {
       name: req.body.name,
       collection: req.body.collection,
       category: req.body.category,
+      sub_category: req.body.subCategory,
+      gender: req.body.gender,
       price: numericPrice,
       image: req.body.image,
       images: req.body.images,
@@ -353,6 +364,8 @@ app.put('/api/products/:id', (req, res) => {
       in_stock: req.body.inStock,
       stock_count: req.body.stockCount,
       featured: req.body.featured,
+      is_archived: req.body.isArchived,
+      archive_story: req.body.archiveStory,
       updated_at: new Date().toISOString()
     }).eq('id', id).catch(e => console.warn('Supabase product update error:', e.message));
   }
@@ -369,8 +382,87 @@ app.delete('/api/products/:id', (req, res) => {
   if (supabaseHealthy && supabase) {
     supabase.from('products').delete().eq('id', id).catch(e => console.warn('Supabase product delete error:', e.message));
   }
+  res.json({ success: true, id });
+});
 
-  res.json({ success: true, message: 'Product removed' });
+// =====================================================================
+// ARCHIVE ENDPOINTS (DYNAMIC SYNC WITH SUPABASE)
+// =====================================================================
+app.get('/api/archive', async (_req, res) => {
+  try {
+    if (supabaseHealthy && supabase) {
+      const { data, error } = await supabase
+        .from('archive_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        const mapped = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          collection: item.collection,
+          category: item.category,
+          subCategory: item.sub_category,
+          gender: item.gender || 'Women',
+          price: item.price,
+          image: item.image,
+          description: item.description,
+          archiveStory: item.archive_story || item.description,
+          inStock: false,
+          isArchived: true,
+          createdAt: item.created_at,
+        }));
+        return res.json(mapped);
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase archive query error:', err.message);
+  }
+
+  res.json(serverStore.archive || []);
+});
+
+app.post('/api/archive', async (req, res) => {
+  const itemData = req.body;
+  const newItem = {
+    ...itemData,
+    id: itemData.id || `arch_${Date.now()}`,
+    inStock: false,
+    isArchived: true,
+    createdAt: new Date().toISOString(),
+  };
+
+  serverStore.archive = [newItem, ...(serverStore.archive || [])];
+  saveStoreLocally();
+
+  if (supabaseHealthy && supabase) {
+    supabase.from('archive_items').insert({
+      id: newItem.id,
+      name: newItem.name,
+      collection: newItem.collection || 'Archive',
+      category: newItem.category || 'Jewelry',
+      sub_category: newItem.subCategory || null,
+      gender: newItem.gender || 'Women',
+      price: newItem.price || null,
+      image: newItem.image,
+      description: newItem.description || '',
+      archive_story: newItem.archiveStory || newItem.description || null,
+    }).catch(e => console.warn('Supabase archive insert notice:', e.message));
+  }
+
+  res.status(201).json(newItem);
+});
+
+app.delete('/api/archive/:id', (req, res) => {
+  const { id } = req.params;
+  serverStore.archive = (serverStore.archive || []).filter(item => item.id !== id);
+  saveStoreLocally();
+
+  if (supabaseHealthy && supabase) {
+    supabase.from('archive_items').delete().eq('id', id).catch(e => console.warn('Supabase archive delete notice:', e.message));
+  }
+
+  res.json({ success: true, id });
 });
 
 // =====================================================================

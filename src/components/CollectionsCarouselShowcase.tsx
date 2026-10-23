@@ -15,6 +15,8 @@ interface CollectionsCarouselShowcaseProps {
   onSelectCategory: (category: string) => void;
   activeSubCategory: string;
   onSelectSubCategory: (subCategory: string) => void;
+  selectedGender?: 'All' | 'Women' | 'Men';
+  onSelectGender?: (gender: 'All' | 'Women' | 'Men') => void;
   currency: CurrencyCode;
   formatPrice: (price: number | string) => string;
   onProductClick: (product: JewelryItem) => void;
@@ -32,6 +34,10 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
   products,
   activeCategory,
   onSelectCategory,
+  activeSubCategory,
+  onSelectSubCategory,
+  selectedGender = 'All',
+  onSelectGender,
   onProductClick,
   onReturnHome
 }) => {
@@ -49,36 +55,74 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ONLY the 5 main categories as requested: All, Necklaces, Earrings, Rings, Bracelets
-  const mainCategories = useMemo(() => {
-    return ['All', 'Necklaces', 'Earrings', 'Rings', 'Bracelets'] as const;
-  }, []);
+  const isPearlsMode = activeCategory === 'Pearls';
 
-  // Intelligent categorization ensuring every jewel falls cleanly into the 4 iconic jewelry types
+  // Subcategories mapping
+  const stonesSubCategories = ['All Stones', 'Gemstones', 'Labgrown', 'Semi precious'] as const;
+  const diamondsSubCategories = ['All Diamonds', 'Natural', 'Labgrown', 'Zircon'] as const;
+  const pearlsSubCategories = ['All Pearls', 'South-Sea', 'Japanese-Akoya', 'Tahitian', 'Fresh Water Pearls'] as const;
+
+  // Filter products by Category, SubCategory, and Gender
   const displayedProducts = useMemo(() => {
     return products.filter(item => {
-      if (activeCategory === 'All') return true;
+      // 1. Gender filter
+      if (selectedGender && selectedGender !== 'All') {
+        if (item.gender && item.gender !== 'Unisex' && item.gender !== selectedGender) {
+          return false;
+        }
+      }
 
-      const catLower = activeCategory.toLowerCase();
-      const itemCat = (item.category || '').toLowerCase();
-      const itemSub = (item.subCategory || '').toLowerCase();
-      const itemName = (item.name || '').toLowerCase();
+      // 2. Pearls Dedicated Mode
+      if (isPearlsMode) {
+        if (item.category !== 'Pearls') return false;
+        if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Pearls') {
+          const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
+          const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
+          return itemSubNorm.includes(subNorm) || subNorm.includes(itemSubNorm);
+        }
+        return true;
+      }
 
-      if (catLower === 'necklaces') {
-        return itemCat === 'necklaces' || itemSub === 'necklaces' || itemName.includes('necklace') || itemName.includes('choker') || itemName.includes('pendant') || itemName.includes('collar');
+      // 3. Stones Category
+      if (activeCategory === 'Stones') {
+        if (item.category !== 'Stones') return false;
+        if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Stones') {
+          const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
+          const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
+          return itemSubNorm.includes(subNorm) || subNorm.includes(itemSubNorm);
+        }
+        return true;
       }
-      if (catLower === 'earrings') {
-        return itemCat === 'earrings' || itemSub === 'earrings' || itemName.includes('earring') || itemName.includes('stud') || itemName.includes('drop') || itemName.includes('hoop');
+
+      // 4. Diamonds Category
+      if (activeCategory === 'Diamonds') {
+        if (item.category !== 'Diamonds') return false;
+        if (activeSubCategory && activeSubCategory !== 'All' && activeSubCategory !== 'All Diamonds') {
+          const subNorm = activeSubCategory.toLowerCase().replace(/[\s-]/g, '');
+          const itemSubNorm = (item.subCategory || '').toLowerCase().replace(/[\s-]/g, '');
+          return itemSubNorm.includes(subNorm) || subNorm.includes(itemSubNorm);
+        }
+        return true;
       }
-      if (catLower === 'rings') {
-        return itemCat === 'rings' || itemSub === 'rings' || itemName.includes('ring') || itemName.includes('band') || itemName.includes('solitaire');
+
+      // 5. Legacy categories (Necklaces, Earrings, Rings, Bracelets) if chosen
+      if (['Necklaces', 'Earrings', 'Rings', 'Bracelets'].includes(activeCategory)) {
+        const catLower = activeCategory.toLowerCase();
+        const itemCat = (item.category || '').toLowerCase();
+        const itemSub = (item.subCategory || '').toLowerCase();
+        const itemName = (item.name || '').toLowerCase();
+        return itemCat === catLower || itemSub === catLower || itemName.includes(catLower.slice(0, -1));
       }
-      if (catLower === 'bracelets') {
-        return itemCat === 'bracelets' || itemSub === 'bracelets' || itemName.includes('bracelet') || itemName.includes('bangle') || itemName.includes('cuff');
+
+      // 6. Named collection (e.g. "L'Aurore", "Nocturne", "Heritage", "Sovereign", "Lumière")
+      if (activeCategory !== 'All' && activeCategory !== 'All Collections') {
+        if (item.collection === activeCategory) return true;
       }
-      return false;
+
+      // 7. Default All
+      return true;
     });
-  }, [products, activeCategory]);
+  }, [products, activeCategory, activeSubCategory, selectedGender, isPearlsMode]);
 
   // Symmetrical Circular Runway Buffer
   const repeatCount = useMemo(() => {
@@ -215,40 +259,114 @@ export const CollectionsCarouselShowcase: React.FC<CollectionsCarouselShowcasePr
       </div>
 
       {/* Atelier Collection Centered Above Category Options */}
-      <div className="relative z-20 text-center flex-shrink-0 mt-3 md:mt-4 mb-2">
+      <div className="relative z-20 text-center flex-shrink-0 mt-2 md:mt-3 mb-1.5">
         <h2 className="text-[12px] md:text-sm uppercase tracking-[0.35em] text-gold/90 font-serif font-light">
-          Atelier Collection
+          {isPearlsMode ? 'The Pearl Atelier' : activeCategory === 'Stones' ? 'Stones & Rare Gems' : activeCategory === 'Diamonds' ? 'High Diamond Vault' : 'Atelier Collection'}
         </h2>
-        <div className="w-8 h-[1px] bg-gradient-to-r from-transparent via-gold/50 to-transparent mx-auto mt-1.5" />
+        <div className="w-8 h-[1px] bg-gradient-to-r from-transparent via-gold/50 to-transparent mx-auto mt-1" />
       </div>
 
-      {/* Minimal Space Category Options Bar: ONLY All, Necklaces, Earrings, Rings, Bracelets */}
-      <div className="relative z-20 px-4 flex-shrink-0 mb-1">
-        <div className="flex items-center justify-center gap-5 sm:gap-8 md:gap-12">
-          {mainCategories.map((catKey) => {
-            const isSelected = activeCategory === catKey;
-            return (
-              <button
-                key={catKey}
-                onClick={() => onSelectCategory(catKey)}
-                className={`relative py-1 text-[11px] md:text-xs uppercase tracking-[0.25em] transition-all duration-300 ${
-                  isSelected
-                    ? 'text-white font-medium'
-                    : 'text-white/40 hover:text-white/80'
-                }`}
-              >
-                <span>{catKey}</span>
-                {isSelected && (
-                  <motion.div
-                    layoutId="minimalCategoryUnderline"
-                    className="absolute -bottom-0.5 left-0 right-0 h-[1.5px] bg-gradient-to-r from-gold/50 via-gold to-gold/50"
-                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                  />
-                )}
-              </button>
-            );
-          })}
+      {/* Primary Category Bar & Gender Selector */}
+      <div className="relative z-20 px-4 flex-shrink-0 mb-1 flex flex-col items-center gap-2">
+        {/* Top Tier: Primary Category Tabs & Gender Toggle */}
+        <div className="w-full max-w-4xl flex flex-wrap items-center justify-between gap-3 px-2">
+          {/* Categories */}
+          <div className="flex items-center gap-4 sm:gap-7 md:gap-9 mx-auto sm:mx-0">
+            {isPearlsMode ? (
+              pearlsSubCategories.map((subKey) => {
+                const isSelected = (subKey === 'All Pearls' && (activeSubCategory === 'All' || activeSubCategory === 'All Pearls')) || activeSubCategory === subKey;
+                return (
+                  <button
+                    key={subKey}
+                    onClick={() => onSelectSubCategory(subKey === 'All Pearls' ? 'All' : subKey)}
+                    className={`relative py-1 text-[10px] md:text-xs uppercase tracking-[0.22em] transition-all duration-300 ${
+                      isSelected ? 'text-white font-medium' : 'text-white/40 hover:text-white/80'
+                    }`}
+                  >
+                    <span>{subKey}</span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="pearlsCategoryUnderline"
+                        className="absolute -bottom-0.5 left-0 right-0 h-[1.5px] bg-gradient-to-r from-gold/50 via-gold to-gold/50"
+                        transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                      />
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              ['All Collections', 'Stones', 'Diamonds'].map((catKey) => {
+                const isSelected = (catKey === 'All Collections' && (activeCategory === 'All' || activeCategory === 'All Collections')) || activeCategory === catKey;
+                return (
+                  <button
+                    key={catKey}
+                    onClick={() => {
+                      onSelectCategory(catKey === 'All Collections' ? 'All' : catKey);
+                      onSelectSubCategory('All');
+                    }}
+                    className={`relative py-1 text-[10px] md:text-xs uppercase tracking-[0.25em] transition-all duration-300 ${
+                      isSelected ? 'text-white font-medium' : 'text-white/40 hover:text-white/80'
+                    }`}
+                  >
+                    <span>{catKey}</span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="minimalCategoryUnderline"
+                        className="absolute -bottom-0.5 left-0 right-0 h-[1.5px] bg-gradient-to-r from-gold/50 via-gold to-gold/50"
+                        transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                      />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Luxury Gender Toggle */}
+          {onSelectGender && (
+            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2 py-0.5 backdrop-blur-md mx-auto sm:mx-0">
+              {(['All', 'Women', 'Men'] as const).map((genderOption) => {
+                const isSelected = selectedGender === genderOption;
+                return (
+                  <button
+                    key={genderOption}
+                    onClick={() => onSelectGender(genderOption)}
+                    className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-gold/90 text-white font-semibold shadow-sm'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    {genderOption === 'All' ? 'All' : genderOption}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Second Tier: Subcategories (When Stones or Diamonds is selected in Collections) */}
+        {!isPearlsMode && (activeCategory === 'Stones' || activeCategory === 'Diamonds') && (
+          <div className="flex items-center justify-center gap-3 sm:gap-6 pt-1 border-t border-white/5 w-full max-w-xl">
+            {(activeCategory === 'Stones' ? stonesSubCategories : diamondsSubCategories).map((subKey) => {
+              const allSubLabel = activeCategory === 'Stones' ? 'All Stones' : 'All Diamonds';
+              const isSelected = (subKey === allSubLabel && (activeSubCategory === 'All' || activeSubCategory === allSubLabel)) || activeSubCategory === subKey;
+              return (
+                <button
+                  key={subKey}
+                  onClick={() => onSelectSubCategory(subKey === allSubLabel ? 'All' : subKey)}
+                  className={`text-[9px] md:text-[10px] uppercase tracking-[0.2em] transition-all duration-300 px-2 py-0.5 rounded-full ${
+                    isSelected
+                      ? 'text-gold font-semibold bg-white/10 border border-gold/30'
+                      : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  {subKey}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Main 5-Card Product Showcase (Pure Imagery, No Details, Dynamic Hover Highlight) */}
