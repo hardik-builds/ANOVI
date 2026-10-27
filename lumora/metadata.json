@@ -1,0 +1,11 @@
+{
+  "name": "LUMORA Luxury Jewelry Management",
+  "description": "A high-end administrative and operational platform for jewelry businesses, managing everything from raw materials and craftsmen to multi-channel luxury sales.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
