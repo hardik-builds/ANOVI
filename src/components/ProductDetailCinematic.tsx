@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { JewelryItem, Review } from '../types';
 import { Logo } from './Logo';
+import { InstagramIcon, FacebookIcon, PinterestIcon, SOCIAL_LINKS } from './SocialIcons';
 
 interface ProductDetailCinematicProps {
   product: JewelryItem;
@@ -583,6 +584,43 @@ export const ProductDetailCinematic: React.FC<ProductDetailCinematicProps> = ({
                     <p className="font-light text-onyx/70">
                       Delivered in our signature handcrafted emerald green velvet presentation box with wax-sealed certification of authenticity and lifetime warranty.
                     </p>
+                  </div>
+
+                  {/* Social Share & Pin */}
+                  <div className="pt-4 border-t border-onyx/10">
+                    <h4 className="text-[10px] uppercase tracking-[0.25em] font-bold text-onyx mb-3">Share & Discover Piece</h4>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-onyx/15 hover:border-gold hover:text-gold text-[10px] uppercase tracking-wider transition-colors"
+                        title="Share on Facebook"
+                      >
+                        <FacebookIcon size={12} />
+                        <span>Facebook</span>
+                      </a>
+                      <a
+                        href={SOCIAL_LINKS.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-onyx/15 hover:border-gold hover:text-gold text-[10px] uppercase tracking-wider transition-colors"
+                        title="Follow on Instagram"
+                      >
+                        <InstagramIcon size={12} />
+                        <span>Instagram</span>
+                      </a>
+                      <a
+                        href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&media=${encodeURIComponent(product.image)}&description=${encodeURIComponent(product.name + ' - ANOVI Haute Joaillerie')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-onyx/15 hover:border-gold hover:text-gold text-[10px] uppercase tracking-wider transition-colors"
+                        title="Pin on Pinterest"
+                      >
+                        <PinterestIcon size={12} />
+                        <span>Pinterest</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
 

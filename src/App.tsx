@@ -10,6 +10,7 @@ import { AdminDashboard } from './components/admin/AdminDashboard';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ProductDetailCinematic } from './components/ProductDetailCinematic';
 import { CollectionsCarouselShowcase } from './components/CollectionsCarouselShowcase';
+import { InstagramIcon, FacebookIcon, PinterestIcon, SocialLinksGroup, SOCIAL_LINKS } from './components/SocialIcons';
 
 interface CartItem {
   id: string;
@@ -39,12 +40,6 @@ const formatPriceUtil = (price: number | string, currency: CurrencyCode) => {
     maximumFractionDigits: 0,
   }).format(converted);
 };
-
-const PinterestIcon = ({ size = 14 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.966 1.406-5.966s-.359-.72-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146 1.124.347 2.317.535 3.554.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z" />
-  </svg>
-);
 
 const FALLBACK_JEWELRY_IMAGE = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=800';
 
@@ -98,19 +93,31 @@ const ProductCard: React.FC<{
           </button>
         </div>
 
-        {/* Social Sharing Overlay - Moved to bottom right */}
-        <div className="absolute bottom-4 right-4 flex gap-2 translate-x-12 group-hover:translate-x-0 transition-transform duration-500 ease-out">
+        {/* Social Sharing Overlay - Bottom Right */}
+        <div className="absolute bottom-4 right-4 flex gap-1.5 translate-x-16 group-hover:translate-x-0 transition-transform duration-500 ease-out z-10">
           <button
-            className="w-7 h-7 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center text-onyx hover:bg-gold hover:text-white transition-all duration-300 shadow-sm"
-            onClick={(e) => { e.stopPropagation(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank'); }}
+            className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-onyx hover:bg-gold hover:text-white transition-all duration-300 shadow-sm cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank', 'noopener,noreferrer'); }}
+            title="Share on Facebook"
+            aria-label="Share on Facebook"
           >
-            <Facebook size={12} />
+            <FacebookIcon size={12} />
           </button>
           <button
-            className="w-7 h-7 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center text-onyx hover:bg-gold hover:text-white transition-all duration-300 shadow-sm"
-            onClick={(e) => { e.stopPropagation(); window.open(`https://www.instagram.com/anovi_jewels`, '_blank'); }}
+            className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-onyx hover:bg-gold hover:text-white transition-all duration-300 shadow-sm cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); window.open(SOCIAL_LINKS.instagram, '_blank', 'noopener,noreferrer'); }}
+            title="Follow on Instagram"
+            aria-label="Follow on Instagram"
           >
-            <Instagram size={12} />
+            <InstagramIcon size={12} />
+          </button>
+          <button
+            className="w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-onyx hover:bg-gold hover:text-white transition-all duration-300 shadow-sm cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(item.image)}&description=${encodeURIComponent(item.name + ' - ANOVI Haute Joaillerie')}`, '_blank', 'noopener,noreferrer'); }}
+            title="Pin on Pinterest"
+            aria-label="Pin on Pinterest"
+          >
+            <PinterestIcon size={12} />
           </button>
         </div>
       </div>
@@ -772,8 +779,42 @@ export default function App() {
               </button>
             </div>
 
-            {/* Right Column: Actions (Currency, Search, Cart) */}
-            <div className="flex-1 flex items-center justify-end gap-5 md:gap-7 text-current">
+            {/* Right Column: Actions (Social Links, Currency, Search, Cart) */}
+            <div className="flex-1 flex items-center justify-end gap-3 sm:gap-4 md:gap-6 text-current">
+              {/* Top Navbar Luxury Social Icons (Instagram, Facebook, Pinterest) */}
+              <div className="flex items-center gap-2 sm:gap-3 pr-2.5 sm:pr-3.5 border-r border-current/20">
+                <a 
+                  href={SOCIAL_LINKS.instagram} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-gold transition-all duration-300 transform hover:scale-110 opacity-75 hover:opacity-100 p-1"
+                  aria-label="Instagram"
+                  title="Follow on Instagram (@vearings)"
+                >
+                  <InstagramIcon size={15} />
+                </a>
+                <a 
+                  href={SOCIAL_LINKS.facebook} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-gold transition-all duration-300 transform hover:scale-110 opacity-75 hover:opacity-100 p-1"
+                  aria-label="Facebook"
+                  title="Connect on Facebook"
+                >
+                  <FacebookIcon size={15} />
+                </a>
+                <a 
+                  href={SOCIAL_LINKS.pinterest} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-gold transition-all duration-300 transform hover:scale-110 opacity-75 hover:opacity-100 p-1"
+                  aria-label="Pinterest"
+                  title="Explore Collections on Pinterest"
+                >
+                  <PinterestIcon size={15} />
+                </a>
+              </div>
+
               {/* Currency Selector */}
               <div className="relative hidden md:block">
                 <button
@@ -851,6 +892,45 @@ export default function App() {
             </div>
           </nav>
         </header>
+      )}
+
+      {/* Floating Side Luxury Social Dock (PC & Tablets) */}
+      {view !== 'admin' && (
+        <aside 
+          className="fixed right-3 md:right-5 top-1/2 -translate-y-1/2 z-40 hidden sm:flex flex-col items-center gap-3.5 py-4 px-2.5 rounded-full bg-black/40 hover:bg-black/75 backdrop-blur-md border border-white/10 text-white/70 hover:text-white transition-all duration-300 shadow-xl"
+          aria-label="Atelier Social Channels"
+        >
+          <a
+            href={SOCIAL_LINKS.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gold transition-all duration-300 transform hover:scale-120 p-1"
+            title="Follow on Instagram (@vearings)"
+            aria-label="Instagram"
+          >
+            <InstagramIcon size={16} />
+          </a>
+          <a
+            href={SOCIAL_LINKS.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gold transition-all duration-300 transform hover:scale-120 p-1"
+            title="Connect on Facebook"
+            aria-label="Facebook"
+          >
+            <FacebookIcon size={16} />
+          </a>
+          <a
+            href={SOCIAL_LINKS.pinterest}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gold transition-all duration-300 transform hover:scale-120 p-1"
+            title="Explore on Pinterest"
+            aria-label="Pinterest"
+          >
+            <PinterestIcon size={16} />
+          </a>
+        </aside>
       )}
 
       {/* Search Overlay */}
@@ -1071,6 +1151,11 @@ export default function App() {
                 <span>Atelier Admin</span>
               </button>
               <button className="text-left" onClick={() => handleNavigate('bespoke')}>Contact Concierge</button>
+
+              <div className="pt-6 mt-2 border-t border-onyx/10">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-onyx/40 font-sans font-medium mb-4">Connect with our Atelier</p>
+                <SocialLinksGroup size={18} className="flex items-center gap-5 text-onyx/70" />
+              </div>
             </div>
           </motion.div>
         )}
@@ -1724,11 +1809,7 @@ export default function App() {
               </div>
               <div>
                 <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold mb-8">Follow Us</h4>
-                <div className="flex gap-6">
-                  <a href="#" className="text-onyx/60 hover:text-gold transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
-                  <a href="#" className="text-onyx/60 hover:text-gold transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
-                  <a href="#" className="text-onyx/60 hover:text-gold transition-colors"><PinterestIcon size={18} /></a>
-                </div>
+                <SocialLinksGroup size={18} className="flex items-center gap-6" />
                 <div className="mt-8 text-[11px] text-onyx/60 space-y-1">
                   <p className="font-serif italic text-gold">{websiteSettings.atelierLocation}</p>
                   <p>{websiteSettings.contactPhone}</p>
